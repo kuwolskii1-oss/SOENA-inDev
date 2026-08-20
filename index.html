@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="SOENA is a companion at the door — a quiet presence that ushers you through journeys, callings, encounters, guidance, community, testimony, experience and consolidation, whatever shape your path takes." />
+    <meta name="theme-color" content="#07060d" />
+    <meta property="og:title" content="SOENA — a companion at the door" />
+    <meta property="og:description" content="A spiritual-journey companion for every kind of path — theistic, non-theistic, philosophical, psychological, emotional." />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <title>SOENA — a companion at the door</title>
+    <style>
+      /* Critical shell: paints the door before any bundle arrives. */
+      :root { color-scheme: dark; }
+      html { background: #07060d; }
+      body {
+        margin: 0;
+        background: #07060d;
+        color: #efeaf7;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        min-height: 100vh;
+      }
+      #aura {
+        position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        background:
+          radial-gradient(42rem 42rem at 50% 38%, rgba(124, 108, 255, 0.16), transparent 62%),
+          radial-gradient(30rem 30rem at 62% 46%, rgba(64, 186, 255, 0.07), transparent 60%),
+          radial-gradient(60rem 40rem at 40% 90%, rgba(255, 138, 84, 0.05), transparent 65%);
+      }
+      #boot-hero {
+        position: relative; z-index: 1; min-height: 92vh;
+        display: grid; place-content: center; text-align: center; gap: 1rem;
+        padding: 0 1.5rem;
+      }
+      #boot-hero h1 {
+        font-size: clamp(2.6rem, 9vw, 6.5rem);
+        font-weight: 500; letter-spacing: 0.32em; text-indent: 0.32em;
+        margin: 0; color: #efeaf7;
+      }
+      #boot-hero p {
+        margin: 0 auto; max-width: 34ch;
+        color: rgba(239, 234, 247, 0.62); font-size: 1.05rem; line-height: 1.6;
+      }
+      noscript p { color: rgba(239,234,247,.85); max-width: 40ch; margin: 2rem auto; text-align: center; }
+    </style>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <div id="aura" aria-hidden="true"></div>
+    <canvas id="gl" aria-hidden="true"></canvas>
+
+    <header id="site-head" hidden>
+      <a class="skip-link" href="#avenues">Skip to the avenues</a>
+      <div class="brand" aria-hidden="true">SOENA</div>
+      <nav id="ways" aria-label="Avenues"></nav>
+      <div class="head-actions">
+        <button id="voice-toggle" type="button" aria-pressed="false" title="Let SOENA speak aloud">voice</button>
+        <button id="memory-open" type="button" title="What SOENA remembers">memory</button>
+      </div>
+    </header>
+
+    <main id="app">
+      <section id="boot-hero" aria-label="SOENA">
+        <h1>SOENA</h1>
+        <p>a companion at the door</p>
+        <noscript>
+          <p>
+            SOENA is an interactive companion and needs JavaScript to walk with you.
+            The door is still here — journeys, callings, encounters, guidance,
+            community, testimony, experience, consolidation — whenever you return
+            with scripts allowed.
+          </p>
+        </noscript>
+      </section>
+    </main>
+
+    <div id="caption" role="status" aria-live="polite"></div>
+    <div id="overlay-root"></div>
+  </body>
+</html>
