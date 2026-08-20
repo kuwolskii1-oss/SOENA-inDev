@@ -185,7 +185,7 @@ export const AVENUES: Avenue[] = [
       interspiritual: 'Borrow practices with respect: learn where they come from, keep their names, honour their depth.',
       seeking: 'Sample honestly: two minutes of stillness today. Data first, doctrine later — or never. Both are allowed.',
     },
-    companionLine: 'Experience — where the path enters the hands. Two minutes, {name}; that {are} enough to begin.',
+    companionLine: 'Experience — where the path enters the hands. Two minutes, {name}; that is enough to begin.',
     doors: [
       { title: 'A breath together', body: 'Stay with me for a few slow breaths. In for four, out for six. I will hold the count with you.', kind: 'breath' },
       { title: 'The two-minute rule', body: 'Choose one practice small enough to survive your worst day — two minutes of stillness, one line of gratitude, one look at the sky. Anchor it to something you already do.', kind: 'prompt' },

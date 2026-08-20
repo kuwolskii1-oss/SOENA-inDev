@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-const DIST = '/home/user/SOENA-inDev/dist';
+const DIST = new URL('../dist', import.meta.url).pathname;
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 
 const server = createServer((req, res) => {
@@ -19,7 +19,7 @@ const server = createServer((req, res) => {
 await new Promise((r) => server.listen(4173, r));
 
 const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  executablePath: process.env.CHROMIUM_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader'],
 });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -57,14 +57,14 @@ results.glContext = await page.evaluate(() => {
 });
 results.profile = await page.evaluate(() => localStorage.getItem('soena.profile.v1'));
 
-await page.screenshot({ path: '/tmp/claude-0/-home-user-SOENA-inDev/d0c6f567-76d0-5156-b0e8-8f7eac37499a/scratchpad/shot-threshold.png' });
+await page.screenshot({ path: 'scripts/.shots/shot-threshold.png' });
 
 // Scroll to an avenue, check framing personalization + orb caption
 await page.locator('#ways a[href="#journeys"]').click();
 await page.waitForTimeout(2200);
 results.journeysFraming = await page.locator('[data-framing-for="journeys"]').textContent();
 results.captionAtJourneys = await page.locator('#caption').textContent();
-await page.screenshot({ path: '/tmp/claude-0/-home-user-SOENA-inDev/d0c6f567-76d0-5156-b0e8-8f7eac37499a/scratchpad/shot-journeys.png' });
+await page.screenshot({ path: 'scripts/.shots/shot-journeys.png' });
 
 // Journal in testimony
 await page.locator('#ways a[href="#testimony"]').click();
@@ -74,13 +74,13 @@ await page.getByRole('button', { name: 'Keep these words' }).click();
 await page.waitForTimeout(700);
 results.journalEntries = await page.locator('.journal-entry').count();
 results.journalStore = await page.evaluate(() => localStorage.getItem('soena.journal.v1'));
-await page.screenshot({ path: '/tmp/claude-0/-home-user-SOENA-inDev/d0c6f567-76d0-5156-b0e8-8f7eac37499a/scratchpad/shot-testimony.png' });
+await page.screenshot({ path: 'scripts/.shots/shot-testimony.png' });
 
 // Memory panel
 await page.locator('#memory-open').click();
 await page.waitForTimeout(900);
 results.memoryPanel = await page.locator('.memory-sheet h2').textContent();
-await page.screenshot({ path: '/tmp/claude-0/-home-user-SOENA-inDev/d0c6f567-76d0-5156-b0e8-8f7eac37499a/scratchpad/shot-memory.png' });
+await page.screenshot({ path: 'scripts/.shots/shot-memory.png' });
 await page.getByRole('button', { name: 'Close' }).click();
 
 // Reload: returning-visitor greeting

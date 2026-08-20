@@ -183,6 +183,7 @@ main, header, footer { position: relative; z-index: 2; }
 
 .avenue {
   min-height: 100vh;
+  min-height: 100svh; /* iOS URL bar: small viewport height when supported */
   display: flex;
   align-items: center;
   padding: 14vh 6vw;

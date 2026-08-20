@@ -166,6 +166,9 @@ void main() {
   // Fade to nothing before the quad's edge so the plane never shows.
   float fade = 1.0 - smoothstep(0.55, 0.98, max(abs(vUv.x), abs(vUv.y)));
   vec3 col = uColorB * (halo + ring) * fade;
+  // Blue-noise-ish dither kills 8-bit banding in the dark gradient.
+  float dither = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+  col += (dither - 0.5) / 255.0;
   gl_FragColor = vec4(col, 1.0);
 }
 `;

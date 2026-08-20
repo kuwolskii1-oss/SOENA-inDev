@@ -47,7 +47,7 @@ function wire(quality: Quality): void {
   if (!scene) return;
   const s = scene;
 
-  on('avenue:enter', ({ id }) => {
+  const applyAvenue = (id: string) => {
     const avenue = avenueById(id);
     if (avenue) {
       s.setHues(avenue.hues[0], avenue.hues[1]);
@@ -62,7 +62,14 @@ function wire(quality: Quality): void {
       s.setAnchor(0);
     }
     if (quality.reducedMotion) s.renderStill();
-  });
+  };
+
+  on('avenue:enter', ({ id }) => applyAvenue(id));
+
+  // The scene arrives late (idle-time chunk): catch up with wherever the
+  // visitor already scrolled to, instead of waking up in threshold colors.
+  const active = document.querySelector<HTMLAnchorElement>('#ways a.is-active');
+  applyAvenue(active?.getAttribute('href')?.slice(1) ?? 'threshold');
 
   on('soena:mood', ({ mood }) => s.setMood(mood));
   on('soena:pulse', ({ strength }) => s.addPulse(strength));

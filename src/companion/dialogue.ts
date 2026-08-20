@@ -12,6 +12,7 @@ const captionEl = (): HTMLElement | null => document.getElementById('caption');
 
 let hideTimer: number | undefined;
 let lastAvenueSpoken = '';
+let chain = 0; // invalidates a previous line's pulse chain when a new one starts
 
 export function say(text: string, mood: string = 'speaking'): void {
   const line = fill(text);
@@ -26,8 +27,10 @@ export function say(text: string, mood: string = 'speaking'): void {
   emit('soena:say', { text: line, mood });
   speak(line);
   // Without voice, still let the body ripple as if speaking.
+  const myChain = ++chain;
   let pulses = Math.min(10, Math.ceil(line.split(' ').length / 3));
   const tick = () => {
+    if (myChain !== chain) return; // a newer line took over
     if (pulses-- <= 0) {
       emit('soena:mood', { mood: 'idle' });
       return;
