@@ -89,6 +89,21 @@ await page.waitForTimeout(1800);
 results.returningOnboardingShown = await page.locator('.threshold-panel').count();
 results.returningGreeting = await page.locator('#caption').textContent();
 
+// The reaching place (contact page): conversation -> folded letter
+await page.goto('http://localhost:4173/contact.html', { waitUntil: 'networkidle' });
+await page.waitForTimeout(1400);
+results.reachHero = await page.locator('#reach-hero h1').textContent();
+await page.getByRole('button', { name: 'I want to walk with SOENA' }).click();
+await page.waitForTimeout(500);
+results.reachNamePrefilled = await page.locator('.reach input[type="text"]').inputValue();
+await page.locator('.reach input[type="email"]').fill('aki@somewhere.earth');
+await page.locator('.reach textarea').fill('I have been circling this door for a while. I think I am ready to walk.');
+await page.getByRole('button', { name: 'Fold the letter' }).click();
+await page.waitForTimeout(700);
+results.reachLetter = await page.locator('.reach-letter').textContent();
+results.reachMailto = await page.locator('.reach a.btn--primary').getAttribute('href');
+await page.screenshot({ path: 'scripts/.shots/shot-reach.png' });
+
 results.errors = errors;
 console.log(JSON.stringify(results, null, 2));
 

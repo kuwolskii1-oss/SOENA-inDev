@@ -76,7 +76,8 @@ export function renderAvenues(): void {
   const coda = document.createElement('section');
   coda.className = 'coda';
   coda.innerHTML = `
-    <p class="reveal" data-coda>${fill('Go gently, {name}. The door does not close.')}</p>`;
+    <p class="reveal" data-coda>${fill('Go gently, {name}. The door does not close.')}</p>
+    <a class="coda-reach external-page-link reveal" href="./contact.html">or reach out to those who tend it</a>`;
   main.appendChild(coda);
 
   // Re-voice personalized fragments when the profile changes.

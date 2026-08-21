@@ -57,9 +57,11 @@ function wire(quality: Quality): void {
       const side = idx % 2 === 0 ? -1 : 1;
       s.setAnchor(window.innerWidth < 720 ? 0 : side * 0.9);
     } else {
-      // Threshold: centre stage.
+      // No avenue (threshold, or a secondary page): threshold hues, and
+      // the page may ask the companion to stand aside via a body attribute.
       s.setHues(255, 205);
-      s.setAnchor(0);
+      const aside = parseFloat(document.body.dataset.presenceAnchor ?? '0') || 0;
+      s.setAnchor(window.innerWidth < 720 ? 0 : aside);
     }
     if (quality.reducedMotion) s.renderStill();
   };

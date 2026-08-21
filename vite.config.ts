@@ -16,6 +16,12 @@ export default defineConfig({
     assetsInlineLimit: singlefile ? 100_000_000 : 2048,
     chunkSizeWarningLimit: 900,
     rollupOptions: {
+      // Single-file mode folds one entry only (inlineDynamicImports
+      // requires it) — choose which via SOENA_SINGLEFILE_ENTRY; the
+      // normal build ships both pages.
+      input: singlefile
+        ? { main: process.env.SOENA_SINGLEFILE_ENTRY ?? 'index.html' }
+        : { main: 'index.html', contact: 'contact.html' },
       output: singlefile
         ? { inlineDynamicImports: true }
         : {

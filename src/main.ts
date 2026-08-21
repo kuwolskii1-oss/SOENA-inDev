@@ -11,15 +11,14 @@ import '@fontsource-variable/outfit/index.css';
 import './styles/main.css';
 
 import { emit, on } from './core/bus';
-import { loadProfile, saveProfile, touchVisit } from './core/profile';
+import { loadProfile, touchVisit } from './core/profile';
 import { detectQuality } from './core/quality';
 import { observeSections, scrollToSection, startScroll } from './core/scroll';
-import { setVoiceEnabled, speechSupported } from './core/speech';
 import { initPresence } from './companion/presence';
-import { greet, say, speakAvenue, speakIntention } from './companion/dialogue';
+import { greet, speakAvenue, speakIntention } from './companion/dialogue';
 import { renderAvenues } from './ui/avenues';
 import { runOnboarding } from './ui/onboarding';
-import { openMemoryPanel } from './ui/memory';
+import { initHeaderControls } from './ui/header';
 import { AVENUES, avenueById } from './data/avenues';
 
 const quality = detectQuality();
@@ -76,32 +75,18 @@ window.addEventListener(
 
 /* Header controls ------------------------------------------------- */
 
-const voiceBtn = document.getElementById('voice-toggle') as HTMLButtonElement | null;
-if (voiceBtn) {
-  if (!speechSupported()) {
-    voiceBtn.disabled = true;
-    voiceBtn.title = 'Speech is not available in this browser';
-  } else {
-    const applyVoice = (onNow: boolean) => {
-      setVoiceEnabled(onNow);
-      voiceBtn.setAttribute('aria-pressed', String(onNow));
-      voiceBtn.classList.toggle('is-on', onNow);
-    };
-    applyVoice(false);
-    voiceBtn.addEventListener('click', () => {
-      const next = voiceBtn.getAttribute('aria-pressed') !== 'true';
-      applyVoice(next);
-      const p = loadProfile();
-      if (p) {
-        p.voiceOn = next;
-        saveProfile(p);
-      }
-      if (next) say('You will hear me now. I will keep my voice low.', 'speaking');
-    });
-  }
-}
+initHeaderControls();
 
-document.getElementById('memory-open')?.addEventListener('click', openMemoryPanel);
+// A way to the reaching place (stripped from single-file preview builds,
+// which carry only this page).
+const ways = document.getElementById('ways');
+if (ways) {
+  const reach = document.createElement('a');
+  reach.href = './contact.html';
+  reach.textContent = 'reach out';
+  reach.className = 'external-page-link';
+  ways.appendChild(reach);
+}
 
 /* Arrival ---------------------------------------------------------- */
 
