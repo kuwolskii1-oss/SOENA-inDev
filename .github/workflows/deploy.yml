@@ -1,8 +1,11 @@
 name: Deploy to GitHub Pages
 
+# Deploys run from main — the branch the github-pages environment allows.
+# Development continues on the claude/... working branch; merging it into
+# main is what publishes.
 on:
   push:
-    branches: [claude/spiritual-journey-companion-app-d3szk2]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
