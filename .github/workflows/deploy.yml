@@ -1,0 +1,62 @@
+name: Deploy to GitHub Pages
+
+# Deploys run from main — the branch the github-pages environment allows.
+# Development continues on the claude/... working branch; merging it into
+# main is what publishes.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # The companion's placeholder bodies (Higgsfield/Meshy GLBs) are
+      # vendored into the deploy as same-origin files so the characters
+      # load without depending on the CDN or its CORS policy. Best-effort:
+      # if a download fails, the site still ships and the light-orb
+      # fallback carries the presence.
+      - name: Vendor companion models
+        run: |
+          mkdir -p dist/models
+          fetch() { curl -fsSL --retry 3 -o "dist/models/$1" "$2" || echo "$1 unavailable — orb fallback will carry it"; }
+          fetch soena-crt-she.glb "https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260821_121820_34173f1b-87ce-4615-8cd5-814f9722230b.glb"
+          fetch soena-crt-he.glb  "https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260821_121835_668a2687-a9e9-40f7-84e6-25c8b33024a6.glb"
+          fetch soena-she.glb     "https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260821_112506_1b5e07e1-81d4-4880-9c98-e8299740e629.glb"
+          fetch soena-he.glb      "https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260821_112515_2a39dd17-65e7-49c1-a736-331e52226e4e.glb"
+          ls -la dist/models
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
