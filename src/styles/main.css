@@ -151,7 +151,27 @@ main, header, footer { position: relative; z-index: 2; }
 
 .hero-brand { font-family: var(--sans); color: var(--ink); }
 
-#hero-line { font-family: var(--serif); font-weight: 460; color: var(--ink); }
+/* Faded memory of the last lines spoken on the stage */
+#hero-ghosts p {
+  margin: 0 0 0.7rem;
+  font-family: var(--serif);
+  font-size: 0.98rem;
+  line-height: 1.45;
+  color: var(--ink-faint);
+  opacity: 0.55;
+}
+#hero-ghosts p:first-child { opacity: 0.3; }
+
+#hero-line { font-family: var(--serif); font-weight: 460; color: var(--ink); min-height: 3.9em; }
+#hero-line.is-typing::after {
+  content: '▍';
+  color: var(--accent);
+  animation: cursor-blink 0.9s steps(1) infinite;
+}
+@keyframes cursor-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  #hero-line.is-typing::after { animation: none; }
+}
 
 #hero-chips .btn--chip {
   background: rgba(255, 255, 255, 0.55);
