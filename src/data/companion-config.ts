@@ -28,18 +28,18 @@ export const COMPANION_FORMS: CompanionForm[] = [
     id: 'she',
     label: 'her — the felted guide',
     localPath: './models/soena-she.glb',
-    // Pending: 3D conversion of the user's female reference upload.
-    remoteUrl: undefined,
+    // Converted from the supplied felted female reference (Meshy rig + idle).
+    remoteUrl:
+      'https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260821_112506_1b5e07e1-81d4-4880-9c98-e8299740e629.glb',
     height: 1.55,
   },
   {
     id: 'he',
     label: 'him — the felted guide',
     localPath: './models/soena-he.glb',
-    // Interim placeholder from the first Higgsfield run; will be replaced
-    // by the conversion of the user's male reference upload.
+    // Converted from the supplied felted male reference (Meshy rig + idle).
     remoteUrl:
-      'https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260821_105336_5c16bb86-3c4d-4c71-8432-8aef0e9b4eb5.glb',
+      'https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260821_112515_2a39dd17-65e7-49c1-a736-331e52226e4e.glb',
     height: 1.55,
   },
 ];
