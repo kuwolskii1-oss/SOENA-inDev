@@ -91,7 +91,7 @@ function read(input: string): Reading {
   const r: Reading = {
     themes,
     heavy: themes.some((t) => HEAVY.includes(t)) || /suicid|self.?harm|hopeless/.test(s),
-    playful: /haha|lol|lmao|�„|😂|😆|joke|kidding|😏/.test(s) || /!{2,}/.test(s),
+    playful: /haha|lol|lmao|🤣|😂|😆|joke|kidding|😏/.test(s) || /!{2,}/.test(s),
     wantsBook: /\b(book|read|reading|recommend|suggest|documentary|watch|chapter|treatise)\b/.test(s),
     wantsQuote: /\b(quote|saying|said|words from|line from)\b/.test(s),
   };
