@@ -40,6 +40,8 @@ export interface Profile {
   /** Free-form things the person asked SOENA to remember. */
   keepsakes: string[];
   voiceOn: boolean;
+  /** Which body SOENA wears: 'orb' | 'she' | 'he'. Older profiles lack it. */
+  form?: string;
   createdAt: number;
   lastVisit: number;
   visits: number;
@@ -85,8 +87,11 @@ export function saveProfile(p: Profile): void {
 export function eraseAllMemory(): void {
   cached = null;
   try {
-    localStorage.removeItem(KEY);
-    localStorage.removeItem('soena.journal.v1');
+    // Everything SOENA holds, gone in one gesture: profile, journal,
+    // lore, the conversation, and the rapport it had built.
+    for (const key of ['soena.profile.v1', 'soena.journal.v1', 'soena.lore.v1', 'soena.chat.v1', 'soena.rapport.v1']) {
+      localStorage.removeItem(key);
+    }
   } catch {
     /* nothing to erase */
   }

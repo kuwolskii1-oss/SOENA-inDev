@@ -11,6 +11,7 @@ import {
   saveProfile,
 } from '../core/profile';
 import { ORIENTATIONS } from '../data/orientations';
+import { COMPANION_FORMS } from '../data/companion-config';
 import { loadJournal } from './journal';
 import { speakErased, speakMemoryOpened } from '../companion/dialogue';
 
@@ -83,6 +84,24 @@ export function openMemoryPanel(): void {
           select.value === 'just my name'
             ? null
             : PRONOUN_PRESETS.find((s) => s.label === select.value) ?? p.pronouns;
+        saveProfile(p);
+      });
+      return select;
+    }));
+
+    // Form
+    panel.appendChild(field('The shape I wear', () => {
+      const select = document.createElement('select');
+      select.className = 'threshold-input';
+      for (const f of COMPANION_FORMS) {
+        const opt = document.createElement('option');
+        opt.value = f.id;
+        opt.textContent = f.label;
+        opt.selected = f.id === (p.form ?? 'orb');
+        select.appendChild(opt);
+      }
+      select.addEventListener('change', () => {
+        p.form = select.value;
         saveProfile(p);
       });
       return select;

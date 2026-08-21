@@ -45,6 +45,10 @@ await page.locator('.orient-card', { hasText: 'Philosophical' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
 await page.getByRole('button', { name: 'meaning & purpose' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
+// Form step: pick the female character (its model can't load in this
+// sandbox — the CDN is egress-blocked — which exercises the orb fallback).
+await page.getByRole('button', { name: 'her — the felted guide' }).click();
+await page.getByRole('button', { name: 'Continue' }).click();
 await page.getByRole('button', { name: 'a little poetically' }).click();
 await page.getByRole('button', { name: 'Open the door' }).click();
 await page.waitForTimeout(1600);
@@ -75,6 +79,23 @@ await page.waitForTimeout(700);
 results.journalEntries = await page.locator('.journal-entry').count();
 results.journalStore = await page.evaluate(() => localStorage.getItem('soena.journal.v1'));
 await page.screenshot({ path: 'scripts/.shots/shot-testimony.png' });
+
+// Chat: book suggestion, lore keep + recall
+await page.locator('#chat-open').click();
+await page.waitForTimeout(600);
+const chatSend = async (text) => {
+  await page.locator('.chat-input').fill(text);
+  await page.locator('.chat-form button[type="submit"]').click();
+  await page.waitForTimeout(2600);
+};
+await chatSend('can you suggest me a book about meaning?');
+results.chatBookReply = await page.locator('.chat-msg--soena').last().textContent();
+await chatSend('remember: my dog is called Biscuit');
+await chatSend('what do you remember?');
+results.chatRecall = await page.locator('.chat-msg--soena').last().textContent();
+await page.screenshot({ path: 'scripts/.shots/shot-chat.png' });
+await page.locator('.chat-close').click();
+await page.waitForTimeout(600);
 
 // Memory panel
 await page.locator('#memory-open').click();

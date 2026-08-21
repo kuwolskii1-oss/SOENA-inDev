@@ -14,6 +14,7 @@ import { startScroll } from './core/scroll';
 import { initPresence } from './companion/presence';
 import { say } from './companion/dialogue';
 import { initHeaderControls } from './ui/header';
+import { initChat } from './ui/chat';
 import { renderReach } from './ui/reach';
 
 const quality = detectQuality();
@@ -24,6 +25,7 @@ const mount = document.getElementById('reach');
 if (mount) renderReach(mount);
 
 initHeaderControls();
+initChat();
 startScroll(quality.reducedMotion);
 initPresence(quality);
 

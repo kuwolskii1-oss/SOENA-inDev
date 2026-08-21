@@ -15,6 +15,7 @@ import {
   createProfile,
 } from '../core/profile';
 import { ORIENTATIONS } from '../data/orientations';
+import { COMPANION_FORMS } from '../data/companion-config';
 
 interface Draft {
   name: string;
@@ -22,13 +23,14 @@ interface Draft {
   orientation: string;
   intentions: string[];
   tone: Tone;
+  form: string;
 }
 
 export function runOnboarding(onDone: (entered: boolean) => void): void {
   const root = document.getElementById('overlay-root');
   if (!root) return onDone(false);
 
-  const draft: Draft = { name: '', pronouns: PRONOUN_PRESETS[2], orientation: 'seeking', intentions: [], tone: 'gentle' };
+  const draft: Draft = { name: '', pronouns: PRONOUN_PRESETS[2], orientation: 'seeking', intentions: [], tone: 'gentle', form: 'orb' };
   let step = 0;
 
   const overlay = document.createElement('div');
@@ -48,6 +50,7 @@ export function runOnboarding(onDone: (entered: boolean) => void): void {
         tone: draft.tone,
         keepsakes: [],
         voiceOn: false,
+        form: draft.form,
       });
     }
     overlay.classList.add('is-leaving');
@@ -199,7 +202,25 @@ export function runOnboarding(onDone: (entered: boolean) => void): void {
       p.querySelector('.threshold-actions')!.append(btn('Continue', 'primary', () => next()));
       return p;
     },
-    // 5 — tone + consent
+    // 5 — form
+    () => {
+      const p = panel('What shape should I wear?', 'A body for walking beside you. You can change it any time through the memory door.', []);
+      const wrap = document.createElement('div');
+      wrap.className = 'chips';
+      COMPANION_FORMS.forEach((f) => {
+        const b = btn(f.label, 'chip', () => {
+          draft.form = f.id;
+          wrap.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+          b.setAttribute('aria-pressed', 'true');
+        });
+        b.setAttribute('aria-pressed', String(f.id === draft.form));
+        wrap.appendChild(b);
+      });
+      p.insertBefore(wrap, p.querySelector('.threshold-actions'));
+      p.querySelector('.threshold-actions')!.append(btn('Continue', 'primary', () => next()));
+      return p;
+    },
+    // 6 — tone + consent
     () => {
       const p = panel(
         'How shall I speak with you?',

@@ -12,13 +12,15 @@ import './styles/main.css';
 
 import { emit, on } from './core/bus';
 import { loadProfile, touchVisit } from './core/profile';
+import { addMomentOnce } from './core/lore';
 import { detectQuality } from './core/quality';
 import { observeSections, scrollToSection, startScroll } from './core/scroll';
-import { initPresence } from './companion/presence';
+import { initPresence, pointAtSelector } from './companion/presence';
 import { greet, speakAvenue, speakIntention } from './companion/dialogue';
 import { renderAvenues } from './ui/avenues';
 import { runOnboarding } from './ui/onboarding';
 import { initHeaderControls } from './ui/header';
+import { initChat } from './ui/chat';
 import { AVENUES, avenueById } from './data/avenues';
 
 const quality = detectQuality();
@@ -47,7 +49,13 @@ on('avenue:enter', ({ id }) => {
   document.querySelectorAll('#ways a').forEach((a) => {
     a.classList.toggle('is-active', a.getAttribute('href') === `#${id}`);
   });
-  if (avenue) speakAvenue(id);
+  if (avenue) {
+    speakAvenue(id);
+    // Lore: SOENA quietly remembers the first time each avenue was walked.
+    if (loadProfile()) {
+      addMomentOnce(`first-${id}`, `first walked the avenue of ${avenue.title.toLowerCase()}`);
+    }
+  }
 });
 
 /* The companion's body ------------------------------------------- */
@@ -76,6 +84,7 @@ window.addEventListener(
 /* Header controls ------------------------------------------------- */
 
 initHeaderControls();
+initChat();
 
 // A way to the reaching place (stripped from single-file preview builds,
 // which carry only this page).
@@ -103,7 +112,11 @@ if (existing) {
   window.setTimeout(() => {
     runOnboarding((entered) => {
       greet();
-      if (entered) window.setTimeout(speakIntention, 6500);
+      if (entered) {
+        window.setTimeout(speakIntention, 6500);
+        // A first small demonstration of pointing: where memory lives.
+        window.setTimeout(() => pointAtSelector('#memory-open'), 12000);
+      }
     });
   }, 700);
 }

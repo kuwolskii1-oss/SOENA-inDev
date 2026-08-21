@@ -1,69 +1,111 @@
 /**
- * The companion's presence layer: decides IF and WHEN the WebGL body loads,
- * and wires it to the rest of the app through the bus.
+ * The companion's presence director.
  *
- * Loading discipline (the LISA lesson):
- *  - The page paints and is fully usable before any 3D code is fetched.
- *  - three.js + scene arrive via dynamic import during idle time.
- *  - No WebGL / reduced-motion / failure → the CSS aura simply remains.
- *    Nothing on the page depends on the canvas existing.
+ * Decides which body SOENA wears (the procedural light-orb, or one of the
+ * placeholder character models), loads it lazily after first paint, wires
+ * it to the app bus, and owns the pointing gesture: scroll the target into
+ * view, spotlight it in CSS, and — when a character is on stage — walk
+ * over, raise the ladder if it is high, and hold the wand on it.
+ *
+ * Loading discipline is unchanged from the orb days: the page is fully
+ * usable before any 3D code arrives, and every failure path lands back on
+ * the CSS aura.
  */
 import { on } from '../core/bus';
 import type { Quality } from '../core/quality';
+import { loadProfile } from '../core/profile';
 import { AVENUES, avenueById } from '../data/avenues';
+import { formById } from '../data/companion-config';
 import type { SoenaScene } from './scene';
+import type { CharacterScene } from './character';
 
-let scene: SoenaScene | null = null;
+let orb: SoenaScene | null = null;
+let character: CharacterScene | null = null;
+let currentQuality: Quality | null = null;
+let activeFormId = 'orb';
 
 export function initPresence(quality: Quality): void {
+  currentQuality = quality;
   if (!quality.webgl) return; // CSS aura carries the presence alone
 
-  const mount = () => {
-    import('./scene')
-      .then(({ SoenaScene }) => {
-        const canvas = document.getElementById('gl') as HTMLCanvasElement | null;
-        if (!canvas) return;
-        scene = new SoenaScene(canvas, quality);
-        canvas.classList.add('is-live');
-        wire(quality);
-        if (quality.reducedMotion) {
-          // One dignified still frame; no animation loop.
-          scene.renderStill();
-        }
-      })
-      .catch(() => {
-        /* GPU refused or chunk failed: the aura remains, the app continues */
-      });
-  };
-
+  const mount = () => void mountPresence(quality);
   if ('requestIdleCallback' in window) {
-    (window as Window & typeof globalThis).requestIdleCallback(mount, { timeout: 2500 });
+    window.requestIdleCallback(mount, { timeout: 2500 });
   } else {
     setTimeout(mount, 600);
+  }
+
+  // Changing form in the memory panel swaps the body in place.
+  on('profile:change', () => {
+    const wanted = formById(loadProfile()?.form).id;
+    if (wanted !== activeFormId && currentQuality) {
+      teardown();
+      void mountPresence(currentQuality);
+    }
+  });
+}
+
+function teardown(): void {
+  orb?.dispose();
+  character?.dispose();
+  orb = null;
+  character = null;
+  document.getElementById('gl')?.classList.remove('is-live');
+}
+
+async function mountPresence(quality: Quality): Promise<void> {
+  const canvas = document.getElementById('gl') as HTMLCanvasElement | null;
+  if (!canvas) return;
+  const form = formById(loadProfile()?.form);
+  activeFormId = form.id;
+
+  if (form.id !== 'orb') {
+    try {
+      const { CharacterScene } = await import('./character');
+      const scene = new CharacterScene(canvas, quality, form);
+      await scene.load();
+      character = scene;
+      canvas.classList.add('is-live');
+      wire(quality);
+      if (quality.reducedMotion) scene.renderStill();
+      return;
+    } catch {
+      /* model unreachable (offline, CDN blocked, no file yet):
+         the light-orb steps in without complaint */
+    }
+  }
+
+  try {
+    const { SoenaScene } = await import('./scene');
+    orb = new SoenaScene(canvas, quality);
+    activeFormId = 'orb';
+    canvas.classList.add('is-live');
+    wire(quality);
+    if (quality.reducedMotion) orb.renderStill();
+  } catch {
+    /* GPU refused or chunk failed: the aura remains, the app continues */
   }
 }
 
 function wire(quality: Quality): void {
-  if (!scene) return;
-  const s = scene;
-
   const applyAvenue = (id: string) => {
     const avenue = avenueById(id);
     if (avenue) {
-      s.setHues(avenue.hues[0], avenue.hues[1]);
-      // Deterministic sides: even avenues put the companion on the left,
-      // odd on the right — always opposite the text column.
       const idx = AVENUES.findIndex((a) => a.id === id);
       const side = idx % 2 === 0 ? -1 : 1;
-      s.setAnchor(window.innerWidth < 720 ? 0 : side * 0.9);
+      orb?.setHues(avenue.hues[0], avenue.hues[1]);
+      character?.setHues(avenue.hues[0], avenue.hues[1]);
+      const anchor = window.innerWidth < 720 ? 0 : side * 0.9;
+      orb?.setAnchor(anchor);
+      character?.setAnchor(anchor * (character?.worldHalfWidth() ?? 2) * 0.52);
     } else {
-      // No avenue (threshold, or a secondary page): threshold hues, and
-      // the page may ask the companion to stand aside via a body attribute.
-      s.setHues(255, 205);
+      orb?.setHues(255, 205);
+      character?.setHues(255, 205);
       const aside = parseFloat(document.body.dataset.presenceAnchor ?? '0') || 0;
-      s.setAnchor(window.innerWidth < 720 ? 0 : aside);
+      orb?.setAnchor(window.innerWidth < 720 ? 0 : aside);
+      character?.setAnchor(window.innerWidth < 720 ? 0 : aside * (character?.worldHalfWidth() ?? 2) * 0.52);
     }
-    if (quality.reducedMotion) s.renderStill();
+    if (quality.reducedMotion) still();
   };
 
   on('avenue:enter', ({ id }) => applyAvenue(id));
@@ -73,20 +115,77 @@ function wire(quality: Quality): void {
   const active = document.querySelector<HTMLAnchorElement>('#ways a.is-active');
   applyAvenue(active?.getAttribute('href')?.slice(1) ?? 'threshold');
 
-  on('soena:mood', ({ mood }) => s.setMood(mood));
-  on('soena:pulse', ({ strength }) => s.addPulse(strength));
-  on('scroll:progress', ({ velocity }) => s.setScrollVelocity(velocity));
-  on('pointer:move', ({ x, y }) => s.setPointer(x, y));
+  on('soena:mood', ({ mood }) => {
+    orb?.setMood(mood);
+    character?.setMood(mood);
+  });
+  on('soena:pulse', ({ strength }) => {
+    orb?.addPulse(strength);
+    character?.addPulse(strength);
+  });
+  on('scroll:progress', ({ velocity }) => {
+    orb?.setScrollVelocity(velocity);
+    character?.setScrollVelocity(velocity);
+  });
+  on('pointer:move', ({ x, y }) => {
+    orb?.setPointer(x, y);
+    character?.setPointer(x, y);
+  });
 
   window.addEventListener('resize', () => {
-    s.resize();
-    if (quality.reducedMotion) s.renderStill();
+    orb?.resize();
+    character?.resize();
+    if (quality.reducedMotion) still();
   });
 
   if (!quality.reducedMotion) {
-    // Join the app's single shared rAF loop.
     import('../core/scroll').then(({ onFrame }) => {
-      onFrame((t, dt) => s.render(t, dt));
+      onFrame((t, dt) => {
+        orb?.render(t, dt);
+        character?.render(t, dt);
+      });
     });
   }
+}
+
+function still(): void {
+  orb?.renderStill();
+  character?.renderStill();
+}
+
+/* ------------------------------------------------------------------ */
+/* Pointing at the page                                                */
+/* ------------------------------------------------------------------ */
+
+let spotlightTimer: number | undefined;
+
+/**
+ * Direct SOENA's attention (and the visitor's) at a piece of the UI.
+ * Works in every form: the character walks over and points the wand;
+ * the orb pulses; either way the element itself is spotlit.
+ */
+export function pointAtSelector(selector: string): void {
+  const el = document.querySelector(selector);
+  if (!el) return;
+
+  // Bring the target on screen first if it is far away.
+  const rect = el.getBoundingClientRect();
+  const offscreen = rect.bottom < 0 || rect.top > window.innerHeight;
+  if (offscreen) {
+    import('../core/scroll').then(({ scrollToSection }) => {
+      const withId = (el as HTMLElement).closest('[id]') as HTMLElement | null;
+      if (withId) scrollToSection(withId.id);
+    });
+  }
+
+  window.setTimeout(() => {
+    // Spotlight the element in CSS (works with or without WebGL).
+    document.querySelectorAll('.soena-spotlight').forEach((n) => n.classList.remove('soena-spotlight'));
+    el.classList.add('soena-spotlight');
+    window.clearTimeout(spotlightTimer);
+    spotlightTimer = window.setTimeout(() => el.classList.remove('soena-spotlight'), 5200);
+
+    if (character) character.pointAtElement(el);
+    else orb?.addPulse(1);
+  }, offscreen ? 900 : 60);
 }

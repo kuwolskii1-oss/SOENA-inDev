@@ -8,6 +8,7 @@
  */
 import { on } from '../core/bus';
 import { fill, loadProfile } from '../core/profile';
+import { addLore } from '../core/lore';
 import { AVENUES, type Avenue, type Door } from '../data/avenues';
 import { speakJournalSaved } from '../companion/dialogue';
 import { addEntry, deleteEntry, formatDate, loadJournal } from './journal';
@@ -223,6 +224,9 @@ function renderJournal(avenueId: string): HTMLElement {
     const value = textarea.value.trim();
     if (!value) return;
     addEntry(avenueId, value);
+    // Lore: SOENA remembers THAT you testified (a moment), not the words —
+    // the words stay in the journal where they belong.
+    addLore('moment', `kept a testimony (${new Date().toLocaleDateString()})`, ['testimony']);
     textarea.value = '';
     speakJournalSaved();
     renderList();
