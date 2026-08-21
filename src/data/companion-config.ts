@@ -27,7 +27,10 @@ export const COMPANION_FORMS: CompanionForm[] = [
   {
     id: 'she',
     label: 'her — the felted guide',
+    // The deploy workflow vendors the GLB into /models as a same-origin
+    // file; the CDN URL remains as a fallback for other hosts.
     localPath: './models/soena-she.glb',
+    localAvailable: true,
     // Converted from the supplied felted female reference (Meshy rig + idle).
     remoteUrl:
       'https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260821_112506_1b5e07e1-81d4-4880-9c98-e8299740e629.glb',
@@ -37,6 +40,7 @@ export const COMPANION_FORMS: CompanionForm[] = [
     id: 'he',
     label: 'him — the felted guide',
     localPath: './models/soena-he.glb',
+    localAvailable: true,
     // Converted from the supplied felted male reference (Meshy rig + idle).
     remoteUrl:
       'https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260821_112515_2a39dd17-65e7-49c1-a736-331e52226e4e.glb',
