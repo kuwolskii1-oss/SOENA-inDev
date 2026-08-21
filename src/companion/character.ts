@@ -72,6 +72,11 @@ export class CharacterScene {
   private scrollV = 0;
   private fallSpin = 0;
 
+  // On the threshold the companion is the whole scenery; in the avenues
+  // it walks at ordinary size beside the text.
+  private stageScale = 1;
+  private stageTarget = 1;
+
   constructor(canvas: HTMLCanvasElement, quality: Quality, private form: CompanionForm) {
     this.renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(quality.dpr);
@@ -79,9 +84,11 @@ export class CharacterScene {
     this.camera = new PerspectiveCamera(35, 1, 0.1, 30);
     this.camera.position.set(0, 0, 6);
 
-    this.hemi = new HemisphereLight(0xbfb3ff, 0x14101f, 1.15);
-    this.key = new DirectionalLight(0xffffff, 1.6);
-    this.key.position.set(1.5, 3, 3.5);
+    // Soft studio light for the silver backdrop: bright even sky, gentle
+    // grey bounce from below, one key from the upper left like a window.
+    this.hemi = new HemisphereLight(0xffffff, 0xa5a3b0, 1.25);
+    this.key = new DirectionalLight(0xffffff, 1.4);
+    this.key.position.set(-1.2, 3, 3.5);
     this.scene.add(this.hemi, this.key, this.rig);
 
     this.wand = this.buildWand();
@@ -199,6 +206,11 @@ export class CharacterScene {
     }
   }
 
+  /** Hero staging: larger presence on the threshold, normal in avenues. */
+  setStage(hero: boolean): void {
+    this.stageTarget = hero ? 1.45 : 1;
+  }
+
   setHues(h1: number, h2: number): void {
     void h1;
     this.tintTarget.setHSL(((h2 % 360) + 360) % 360 / 360, 0.6, 0.68);
@@ -276,6 +288,9 @@ export class CharacterScene {
     const r = this.rig;
     const dx = this.walkTargetX - r.position.x;
 
+    this.stageScale += (this.stageTarget - this.stageScale) * (1 - Math.exp(-dt * 2.5));
+    r.scale.setScalar(this.stageScale);
+
     switch (this.state) {
       case 'idle': {
         // Breathing bob, slow sway, occasional glance; wool has moods too.
@@ -283,7 +298,7 @@ export class CharacterScene {
         r.rotation.z += (Math.sin(t * 0.7) * 0.02 - r.rotation.z) * k;
         r.rotation.y += (this.pointer.x * 0.22 + Math.sin(t * 0.23) * 0.12 - r.rotation.y) * k;
         r.rotation.x += (-this.pulse * 0.06 - r.rotation.x) * (1 - Math.exp(-dt * 10));
-        const s = 1 + this.pulse * 0.025;
+        const s = this.stageScale * (1 + this.pulse * 0.025);
         r.scale.set(s, s, s);
         break;
       }
@@ -379,12 +394,13 @@ export class CharacterScene {
         // Squash, wobble, recover — dignity mostly intact.
         const u = Math.min(1, this.stateT / 0.55);
         const squash = Math.sin(u * Math.PI);
-        r.scale.set(1 + squash * 0.18, 1 - squash * 0.22, 1 + squash * 0.18);
+        const b = this.stageScale;
+        r.scale.set(b * (1 + squash * 0.18), b * (1 - squash * 0.22), b * (1 + squash * 0.18));
         r.position.y = 0;
         r.rotation.z += (0 - r.rotation.z) * (1 - Math.exp(-dt * 8));
         r.rotation.y += (0 - r.rotation.y) * (1 - Math.exp(-dt * 8));
         if (u >= 1) {
-          r.scale.set(1, 1, 1);
+          r.scale.setScalar(b);
           this.fallSpin = 0;
           this.enter('idle');
         }

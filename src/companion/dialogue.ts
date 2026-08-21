@@ -16,8 +16,17 @@ let chain = 0; // invalidates a previous line's pulse chain when a new one start
 
 export function say(text: string, mood: string = 'speaking'): void {
   const line = fill(text);
+  // On the threshold stage, SOENA's words live beside the character; the
+  // floating caption only takes over once the stage has scrolled away.
+  const heroLine = document.getElementById('hero-line');
+  let heroVisible = false;
+  if (heroLine) {
+    heroLine.textContent = line;
+    const rect = heroLine.getBoundingClientRect();
+    heroVisible = rect.bottom > 0 && rect.top < window.innerHeight;
+  }
   const el = captionEl();
-  if (el) {
+  if (el && !heroVisible) {
     el.textContent = line;
     el.classList.add('is-visible');
     window.clearTimeout(hideTimer);

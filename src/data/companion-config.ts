@@ -7,7 +7,7 @@
  * then the CDN URL, and if both fail the procedural light-orb takes over —
  * the page never breaks over a missing body.
  */
-export type CompanionFormId = 'orb' | 'she' | 'he';
+export type CompanionFormId = 'orb' | 'she' | 'he' | 'crt-she' | 'crt-he';
 
 export interface CompanionForm {
   id: CompanionFormId;
@@ -23,6 +23,24 @@ export interface CompanionForm {
 }
 
 export const COMPANION_FORMS: CompanionForm[] = [
+  {
+    id: 'crt-she',
+    label: 'her — the seer (TV head)',
+    localPath: './models/soena-crt-she.glb',
+    localAvailable: true,
+    remoteUrl:
+      'https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260821_121820_34173f1b-87ce-4615-8cd5-814f9722230b.glb',
+    height: 1.65,
+  },
+  {
+    id: 'crt-he',
+    label: 'him — the seer (TV head)',
+    localPath: './models/soena-crt-he.glb',
+    localAvailable: true,
+    remoteUrl:
+      'https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260821_121835_668a2687-a9e9-40f7-84e6-25c8b33024a6.glb',
+    height: 1.65,
+  },
   { id: 'orb', label: 'a living light', height: 1.4 },
   {
     id: 'she',
@@ -48,6 +66,7 @@ export const COMPANION_FORMS: CompanionForm[] = [
   },
 ];
 
+/** Guests and unset profiles meet the seer first — the door's face. */
 export function formById(id: string | undefined): CompanionForm {
   return COMPANION_FORMS.find((f) => f.id === id) ?? COMPANION_FORMS[0];
 }

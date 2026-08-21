@@ -127,12 +127,38 @@ function enhanceHero(): void {
   const hero = document.getElementById('boot-hero');
   if (!hero) return;
   hero.dataset.avenue = 'threshold';
-  const cue = document.createElement('button');
-  cue.type = 'button';
-  cue.className = 'hero-cue';
-  cue.innerHTML = `<span>step through</span><span class="hero-cue-line" aria-hidden="true"></span>`;
-  cue.addEventListener('click', () => scrollToSection(AVENUES[0].id));
-  hero.appendChild(cue);
+
+  // The conversation chips — the door's first exchange, LISA-style:
+  // a scripted opening move for each kind of visitor.
+  const chips = document.getElementById('hero-chips');
+  if (chips) {
+    const chip = (label: string, act: () => void) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn--chip';
+      b.textContent = label;
+      b.addEventListener('click', act);
+      return b;
+    };
+    chips.append(
+      chip('Walk the avenues', () => scrollToSection(AVENUES[0].id)),
+      chip('Just talk with me', () => document.getElementById('chat-open')?.click()),
+      chip('Share a testimony', () => scrollToSection('testimony')),
+      chip('Reach the keepers', () => {
+        window.location.href = './contact.html';
+      }),
+    );
+  }
+
+  const left = hero.querySelector('.hero-left');
+  if (left) {
+    const cue = document.createElement('button');
+    cue.type = 'button';
+    cue.className = 'hero-cue';
+    cue.innerHTML = `<span>step through</span><span class="hero-cue-line" aria-hidden="true"></span>`;
+    cue.addEventListener('click', () => scrollToSection(AVENUES[0].id));
+    left.appendChild(cue);
+  }
 }
 
 function offerContinue(avenueId: string): void {

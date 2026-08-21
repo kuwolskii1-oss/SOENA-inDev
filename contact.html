@@ -8,21 +8,22 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <title>Reach SOENA</title>
     <style>
-      /* Critical shell: paints before any bundle arrives. */
-      :root { color-scheme: dark; }
-      html { background: #07060d; }
+      /* Critical shell: paints the studio before any bundle arrives. */
+      :root { color-scheme: light; }
+      html { background: #d7d8da; }
       body {
         margin: 0;
-        background: #07060d;
-        color: #efeaf7;
+        background: #d7d8da;
+        color: #17171b;
         font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
         min-height: 100vh;
       }
       #aura {
         position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background:
-          radial-gradient(42rem 42rem at 50% 38%, rgba(124, 108, 255, 0.16), transparent 62%),
-          radial-gradient(30rem 30rem at 62% 46%, rgba(64, 186, 255, 0.07), transparent 60%);
+          radial-gradient(70rem 54rem at 36% 42%, rgba(255, 255, 255, 0.9), transparent 70%),
+          radial-gradient(40rem 40rem at 72% 70%, rgba(139, 123, 255, 0.10), transparent 65%),
+          linear-gradient(#d9dadc, #cfd0d3);
       }
       #reach-hero {
         position: relative; z-index: 1; min-height: 46vh;
@@ -34,8 +35,8 @@
         font-weight: 500; letter-spacing: 0.14em; text-indent: 0.14em;
         margin: 0;
       }
-      #reach-hero p { margin: 0 auto; max-width: 40ch; color: rgba(239,234,247,.62); line-height: 1.6; }
-      noscript p { color: rgba(239,234,247,.85); max-width: 40ch; margin: 2rem auto; text-align: center; }
+      #reach-hero p { margin: 0 auto; max-width: 40ch; color: rgba(23,23,27,.64); line-height: 1.6; }
+      noscript p { color: rgba(23,23,27,.85); max-width: 40ch; margin: 2rem auto; text-align: center; }
     </style>
     <script type="module" src="/src/contact.ts"></script>
   </head>
@@ -50,7 +51,7 @@
         <a class="external-page-link" href="./index.html">the door</a>
       </nav>
       <div class="head-actions">
-        <button id="chat-open" type="button" title="Talk with SOENA">talk</button>
+        <button id="chat-open" type="button" title="Talk with SOENA">let’s talk</button>
         <button id="voice-toggle" type="button" aria-pressed="false" title="Let SOENA speak aloud">voice</button>
         <button id="memory-open" type="button" title="What SOENA remembers">memory</button>
       </div>

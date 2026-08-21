@@ -98,12 +98,15 @@ function wire(quality: Quality): void {
       const anchor = window.innerWidth < 720 ? 0 : side * 0.9;
       orb?.setAnchor(anchor);
       character?.setAnchor(anchor * (character?.worldHalfWidth() ?? 2) * 0.52);
+      character?.setStage(false);
     } else {
       orb?.setHues(255, 205);
       character?.setHues(255, 205);
       const aside = parseFloat(document.body.dataset.presenceAnchor ?? '0') || 0;
       orb?.setAnchor(window.innerWidth < 720 ? 0 : aside);
       character?.setAnchor(window.innerWidth < 720 ? 0 : aside * (character?.worldHalfWidth() ?? 2) * 0.52);
+      // The threshold is the stage: the companion stands tall and close.
+      character?.setStage(true);
     }
     if (quality.reducedMotion) still();
   };

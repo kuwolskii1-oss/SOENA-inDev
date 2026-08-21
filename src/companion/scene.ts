@@ -116,6 +116,10 @@ export class SoenaScene {
     );
     this.glow.position.z = -1.2;
     this.glow.scale.setScalar(0.78);
+    // The additive glow was written for the dark theme; on a transparent
+    // canvas over the light studio it accumulates opaque alpha and reads
+    // as a dark slab. The orb stands without it.
+    this.glow.visible = false;
     this.scene.add(this.glow);
 
     this.halo = new Points(
@@ -125,7 +129,7 @@ export class SoenaScene {
         fragmentShader: HALO_FRAGMENT,
         uniforms: { ...shared, uPixelRatio: { value: quality.dpr } },
         transparent: true,
-        blending: AdditiveBlending,
+        // Normal blending: additive motes vanish against a light ground.
         depthWrite: false,
       }),
     );
@@ -154,10 +158,11 @@ export class SoenaScene {
     return geo;
   }
 
-  /** Avenue hues in degrees; converted once, lerped per-frame. */
+  /** Avenue hues in degrees; converted once, lerped per-frame.
+   *  Tuned darker so the orb holds its shape on the light studio ground. */
   setHues(h1: number, h2: number): void {
-    this.targetA.setHSL(((h1 % 360) + 360) % 360 / 360, 0.55, 0.38);
-    this.targetB.setHSL(((h2 % 360) + 360) % 360 / 360, 0.75, 0.62);
+    this.targetA.setHSL(((h1 % 360) + 360) % 360 / 360, 0.5, 0.28);
+    this.targetB.setHSL(((h2 % 360) + 360) % 360 / 360, 0.6, 0.44);
   }
 
   setMood(name: string): void {
