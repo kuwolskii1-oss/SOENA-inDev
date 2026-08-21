@@ -10,6 +10,7 @@
 import {
   AdditiveBlending,
   AnimationMixer,
+  Bone,
   Box3,
   BoxGeometry,
   BufferAttribute,
@@ -46,6 +47,12 @@ export class CharacterScene {
   private rig = new Group(); // moves around the page
   private model: Group | null = null;
   private mixer: AnimationMixer | null = null;
+
+  // Gaze: the head bone follows the visitor's cursor — the single
+  // strongest "someone is here with you" signal a character can give.
+  private headBone: Bone | null = null;
+  private gazeYaw = 0;
+  private gazePitch = 0;
 
   private hemi: HemisphereLight;
   private key: DirectionalLight;
@@ -134,6 +141,17 @@ export class CharacterScene {
           this.mixer = new AnimationMixer(this.model);
           this.mixer.clipAction(gltf.animations[0]).play();
         }
+
+        // Find the head (or failing that the neck) in the auto-rig so the
+        // companion can meet the visitor's cursor with its gaze.
+        const bones: Bone[] = [];
+        this.model.traverse((o) => {
+          if ((o as Bone).isBone) bones.push(o as Bone);
+        });
+        this.headBone =
+          bones.find((b) => /head/i.test(b.name)) ??
+          bones.find((b) => /neck/i.test(b.name)) ??
+          null;
         return;
       } catch (err) {
         lastErr = err;
@@ -208,7 +226,7 @@ export class CharacterScene {
 
   /** Hero staging: larger presence on the threshold, normal in avenues. */
   setStage(hero: boolean): void {
-    this.stageTarget = hero ? 1.45 : 1;
+    this.stageTarget = hero ? 1.75 : 1;
   }
 
   setHues(h1: number, h2: number): void {
@@ -284,6 +302,21 @@ export class CharacterScene {
     this.hemi.color.copy(this.tint);
     this.pulse *= Math.exp(-dt * 4);
     this.mixer?.update(dt);
+
+    // Gaze tracking, applied AFTER the mixer so it layers over the idle
+    // clip: the head turns to meet the cursor, damped like real attention.
+    if (this.headBone) {
+      const gk = 1 - Math.exp(-dt * 5);
+      this.gazeYaw += (this.pointer.x * 0.55 - this.gazeYaw) * gk;
+      this.gazePitch += (-this.pointer.y * 0.32 - this.gazePitch) * gk;
+      this.headBone.rotation.y += this.gazeYaw;
+      this.headBone.rotation.x += this.gazePitch;
+    }
+
+    // Waist-up framing on the threshold stage: the camera rises so the
+    // head owns the upper half and the feet fall out of frame.
+    const camTargetY = this.stageTarget > 1 ? 0.62 : 0;
+    this.camera.position.y += (camTargetY - this.camera.position.y) * (1 - Math.exp(-dt * 2.2));
 
     const r = this.rig;
     const dx = this.walkTargetX - r.position.x;

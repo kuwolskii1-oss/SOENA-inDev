@@ -16,7 +16,7 @@ import { addMomentOnce } from './core/lore';
 import { detectQuality } from './core/quality';
 import { observeSections, scrollToSection, startScroll } from './core/scroll';
 import { initPresence, pointAtSelector } from './companion/presence';
-import { greet, speakAvenue, speakIntention } from './companion/dialogue';
+import { greet, say, speakAvenue, speakIntention } from './companion/dialogue';
 import { renderAvenues } from './ui/avenues';
 import { runOnboarding } from './ui/onboarding';
 import { initHeaderControls } from './ui/header';
@@ -140,13 +140,19 @@ function enhanceHero(): void {
       b.addEventListener('click', act);
       return b;
     };
+    // Each chip earns a typed reply before anything moves — conversation
+    // first, navigation second.
+    const replyThen = (line: string, act: () => void, delay = 1600) => () => {
+      say(line, 'guiding');
+      window.setTimeout(act, delay);
+    };
     chips.append(
-      chip('Walk the avenues', () => scrollToSection(AVENUES[0].id)),
-      chip('Just talk with me', () => document.getElementById('chat-open')?.click()),
-      chip('Share a testimony', () => scrollToSection('testimony')),
-      chip('Reach the keepers', () => {
+      chip('Walk the avenues', replyThen('Then walk with me — the avenues open just below.', () => scrollToSection(AVENUES[0].id))),
+      chip('Just talk with me', replyThen('Good. No agenda, no map — just company.', () => document.getElementById('chat-open')?.click(), 1100)),
+      chip('Share a testimony', replyThen('I keep a page for exactly that. Come — your words stay on your own device.', () => scrollToSection('testimony'))),
+      chip('Reach the keepers', replyThen('The people who tend this place would love a letter. This way.', () => {
         window.location.href = './contact.html';
-      }),
+      })),
     );
   }
 

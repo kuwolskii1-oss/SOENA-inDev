@@ -13,6 +13,46 @@ const captionEl = (): HTMLElement | null => document.getElementById('caption');
 let hideTimer: number | undefined;
 let lastAvenueSpoken = '';
 let chain = 0; // invalidates a previous line's pulse chain when a new one starts
+let typeTimer: number | undefined;
+
+const reducedMotion = () =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Typewriter for the stage: the line arrives one character at a time under
+ * a block cursor, and the previous line steps up into the ghost stack —
+ * a visible, fading memory of the conversation.
+ */
+function typeIntoHero(heroLine: HTMLElement, line: string): void {
+  window.clearInterval(typeTimer);
+
+  const ghosts = document.getElementById('hero-ghosts');
+  const previous = heroLine.textContent?.trim();
+  if (ghosts && previous && previous !== line) {
+    const g = document.createElement('p');
+    g.textContent = previous;
+    ghosts.appendChild(g);
+    while (ghosts.children.length > 2) ghosts.removeChild(ghosts.firstChild!);
+  }
+
+  if (reducedMotion()) {
+    heroLine.textContent = line;
+    heroLine.classList.remove('is-typing');
+    return;
+  }
+
+  let i = 0;
+  heroLine.classList.add('is-typing');
+  heroLine.textContent = '';
+  typeTimer = window.setInterval(() => {
+    i += 1;
+    heroLine.textContent = line.slice(0, i);
+    if (i >= line.length) {
+      window.clearInterval(typeTimer);
+      heroLine.classList.remove('is-typing');
+    }
+  }, 26);
+}
 
 export function say(text: string, mood: string = 'speaking'): void {
   const line = fill(text);
@@ -21,9 +61,10 @@ export function say(text: string, mood: string = 'speaking'): void {
   const heroLine = document.getElementById('hero-line');
   let heroVisible = false;
   if (heroLine) {
-    heroLine.textContent = line;
     const rect = heroLine.getBoundingClientRect();
     heroVisible = rect.bottom > 0 && rect.top < window.innerHeight;
+    if (heroVisible) typeIntoHero(heroLine, line);
+    else heroLine.textContent = line;
   }
   const el = captionEl();
   if (el && !heroVisible) {

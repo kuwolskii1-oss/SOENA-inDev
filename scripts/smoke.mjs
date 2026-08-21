@@ -58,9 +58,10 @@ await page.getByRole('button', { name: 'her — the felted guide' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
 await page.getByRole('button', { name: 'a little poetically' }).click();
 await page.getByRole('button', { name: 'Open the door' }).click();
-await page.waitForTimeout(1600);
+// The hero line types character-by-character; give it room to finish.
+await page.waitForTimeout(4200);
 
-results.greeting = await page.locator('#caption').textContent();
+results.greeting = await page.locator('#hero-line').textContent();
 results.canvasLive = await page.locator('#gl.is-live').count();
 results.glContext = await page.evaluate(() => {
   const c = document.getElementById('gl');
@@ -111,11 +112,11 @@ results.memoryPanel = await page.locator('.memory-sheet h2').textContent();
 await page.screenshot({ path: 'scripts/.shots/shot-memory.png' });
 await page.getByRole('button', { name: 'Close' }).click();
 
-// Reload: returning-visitor greeting
+// Reload: returning-visitor greeting (typed into the hero line)
 await page.reload({ waitUntil: 'networkidle' });
-await page.waitForTimeout(1800);
+await page.waitForTimeout(4600);
 results.returningOnboardingShown = await page.locator('.threshold-panel').count();
-results.returningGreeting = await page.locator('#caption').textContent();
+results.returningGreeting = await page.locator('#hero-line').textContent();
 
 // The reaching place (contact page): conversation -> folded letter
 await page.goto('http://localhost:4173/contact.html', { waitUntil: 'networkidle' });
