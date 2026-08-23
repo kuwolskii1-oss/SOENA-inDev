@@ -7,7 +7,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
 const DIST = new URL('../dist', import.meta.url).pathname;
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.webp': 'image/webp', '.webm': 'video/webm', '.mp4': 'video/mp4' };
 
 const server = createServer((req, res) => {
   let p = req.url.split('?')[0];
@@ -26,12 +26,10 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 
 const errors = [];
+// Every asset is local now (sprites, fonts, videos) — any console error,
+// including a failed resource load, is a real regression.
 page.on('console', (m) => {
-  if (m.type() !== 'error') return;
-  // Resource fetch failures are environment noise in sandboxes where the
-  // model CDN is unreachable (the app falls back to the orb by design).
-  if (/Failed to load resource/.test(m.text())) return;
-  errors.push(m.text());
+  if (m.type() === 'error') errors.push(m.text());
 });
 page.on('pageerror', (e) => errors.push(String(e)));
 
@@ -68,8 +66,8 @@ await page.locator('.orient-card', { hasText: 'Philosophical' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
 await page.getByRole('button', { name: 'meaning & purpose' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
-// Form step: pick the tide-glass female (model CDN is blocked in this
-// sandbox, exercising the orb fallback).
+// Form step: pick the tide-glass female (a local sprite — it renders
+// for real in this sandbox, asserted below).
 await page.getByRole('button', { name: 'her — the tide-glass listener' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
 await page.getByRole('button', { name: 'a little poetically' }).click();
@@ -86,6 +84,16 @@ results.figureLayers = await page.locator('#figure img').count();
 results.figurePinned = await page.evaluate(() => {
   const r = document.getElementById('figure').getBoundingClientRect();
   return Math.round(r.left) === 0 && Math.abs(r.bottom - window.innerHeight) < 2;
+});
+// A11y contract: decorative, non-interactive, non-draggable.
+results.figureA11y = await page.evaluate(() => {
+  const fig = document.getElementById('figure');
+  const imgs = [...fig.querySelectorAll('img')];
+  return (
+    fig.getAttribute('aria-hidden') === 'true' &&
+    getComputedStyle(fig).pointerEvents === 'none' &&
+    imgs.every((i) => i.alt === '' && !i.draggable)
+  );
 });
 // The head must follow the cursor's height: up when high, down when low.
 await page.mouse.move(720, 80);
@@ -257,6 +265,27 @@ await page.waitForFunction(() => document.documentElement.dataset.theme !== 'dar
 results.themeBackToLight = await page.evaluate(
   () => (document.documentElement.dataset.theme ?? 'light') + '/' + localStorage.getItem('soena.theme.v1'),
 );
+
+// Reduced motion: the figure must arrive at its final size (no easing
+// from the constructor's neutral scale — the old bug left it ~2.5x big),
+// with a neutral head and no physics creep across events.
+const rmPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+await rmPage.emulateMedia({ reducedMotion: 'reduce' });
+await rmPage.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
+await rmPage.waitForFunction(() => document.documentElement.classList.contains('arrival-done'), null, { timeout: 9000 });
+await rmPage.waitForSelector('#figure.is-here', { timeout: 8000 });
+await rmPage.waitForTimeout(600);
+results.reducedMotionFigure = await rmPage.evaluate(() => {
+  const r = document.getElementById('figure').getBoundingClientRect();
+  // landing scale 0.38 -> min(0.38*0.62*900, 0.42*1440/aspect) = ~212px
+  const expected = 0.38 * 0.62 * 900;
+  const head = document.querySelector('.figure-head');
+  return {
+    heightOk: Math.abs(r.height - expected) < 8,
+    headNeutral: !head || head.style.transform.startsWith('rotate(0deg)'),
+  };
+});
+await rmPage.close();
 
 results.errors = errors;
 console.log(JSON.stringify(results, null, 2));

@@ -29,6 +29,8 @@ export function openMemoryPanel(): void {
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('aria-label', 'What SOENA remembers');
+  // Wheel inside the panel must scroll the panel, not the Lenis page.
+  overlay.setAttribute('data-lenis-prevent', '');
 
   const close = () => {
     overlay.classList.add('is-leaving');
