@@ -35,18 +35,9 @@ jobs:
 
       - run: npm run build
 
-      # The companion's tide-glass bodies (Higgsfield/Meshy GLBs) are
-      # vendored into the deploy as same-origin files so the characters
-      # load without depending on the CDN or its CORS policy. Best-effort:
-      # if a download fails, the site still ships and the light-orb
-      # fallback carries the presence.
-      - name: Vendor companion models
-        run: |
-          mkdir -p dist/models
-          fetch() { curl -fsSL --retry 3 -o "dist/models/$1" "$2" || echo "$1 unavailable — orb fallback will carry it"; }
-          fetch soena-she.glb "https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260823_171936_cbccfa99-4e2d-4124-ad6e-1170e2d4c7c4.glb"
-          fetch soena-he.glb  "https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260823_172455_e2ae55ba-a228-4a30-88df-96f7ff910c20.glb"
-          ls -la dist/models
+      # The tide-glass companions are 2D sprites committed under
+      # public/figures — copied into dist by the build itself, so there
+      # is nothing to vendor and no CDN to depend on.
 
       - uses: actions/configure-pages@v5
         with:
