@@ -123,8 +123,8 @@ function wire(quality: Quality): void {
 
   // The scene arrives late (idle-time chunk): catch up with wherever the
   // visitor already scrolled to, instead of waking up in threshold colors.
-  const active = document.querySelector<HTMLAnchorElement>('#ways a.is-active');
-  applyAvenue(active?.getAttribute('href')?.slice(1) ?? 'threshold');
+  // (Read from the scroll observer — the nav no longer lists avenues.)
+  import('../core/scroll').then(({ currentAvenue }) => applyAvenue(currentAvenue()));
 
   on('soena:mood', ({ mood }) => {
     orb?.setMood(mood);

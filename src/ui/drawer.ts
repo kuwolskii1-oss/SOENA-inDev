@@ -31,13 +31,19 @@ export function buildNav(communitiesHref: string, items: DrawerItem[]): void {
   drawerBtn.textContent = 'drawer';
   prefixIcon(drawerBtn, 'menu');
   drawerBtn.setAttribute('aria-expanded', 'false');
-  ways.appendChild(drawerBtn);
+  // The drawer trigger is a control, not a way: it lives with the other
+  // header actions so it survives the narrow-screen rule that hides #ways
+  // — otherwise phones lose every cross-page route.
+  (document.querySelector('.head-actions') ?? ways).prepend(drawerBtn);
 
   let panel: HTMLElement | null = null;
 
   const closeDrawer = () => {
+    // Focus would otherwise land on <body> when the panel is destroyed.
+    const hadFocus = !!panel?.contains(document.activeElement);
     panel?.classList.remove('is-open');
     drawerBtn.setAttribute('aria-expanded', 'false');
+    if (hadFocus) drawerBtn.focus();
     window.setTimeout(() => {
       panel?.remove();
       panel = null;

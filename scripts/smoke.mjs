@@ -99,6 +99,23 @@ await page.locator('#memory-open').click();
 await page.waitForTimeout(900);
 results.memoryPanel = await page.locator('.memory-sheet h2').textContent();
 results.applyPresent = (await page.locator('#memory-apply').count()) === 1;
+// Regression: every memory control must carry an accessible name — the
+// label has to be tied to it, not merely sitting next to it.
+results.nameFieldLabelled = await page.getByRole('textbox', { name: /your name/i }).count();
+results.selectsLabelled = await page.evaluate(() =>
+  [...document.querySelectorAll('.memory-sheet select')].every((s) => {
+    const l = s.id && document.querySelector(`label[for="${s.id}"]`);
+    return !!(l && l.textContent.trim());
+  }),
+);
+results.groupsLabelled = await page.evaluate(() =>
+  [...document.querySelectorAll('.memory-sheet [role="group"]')].every((g) =>
+    g.hasAttribute('aria-labelledby'),
+  ),
+);
+// Regression: the erase confirmation must keep its icon.
+await page.getByRole('button', { name: /erase everything/i }).click();
+results.eraseKeptIcon = await page.locator('.btn--danger .icon').count();
 await page.locator('.memory-sheet input[type="text"]').first().fill('Akira');
 await page.locator('#memory-apply').click();
 await page.waitForTimeout(900);
@@ -115,11 +132,34 @@ await page.waitForTimeout(700);
 results.drawerLinks = await page.locator('.drawer-list a').count();
 results.drawerEmblems = await page.locator('.drawer-list .emblem').count();
 await page.screenshot({ path: 'scripts/.shots/shot-drawer.png' });
+// Regression: closing the drawer must hand focus back to its trigger.
+await page.locator('.drawer-head .btn').click();
+await page.waitForTimeout(600);
+results.focusAfterDrawerClose = await page.evaluate(() => document.activeElement?.id ?? '');
+// Regression: the drawer trigger must survive the narrow-screen rule
+// that hides #ways, or phones lose every cross-page route.
+await page.setViewportSize({ width: 390, height: 780 });
+await page.waitForTimeout(300);
+results.drawerVisibleOnMobile = await page.locator('#drawer-open').isVisible();
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.waitForTimeout(300);
+await page.locator('#drawer-open').click();
+await page.waitForTimeout(600);
 await page.locator('.drawer-list a[href="#journeys"]').click();
 await page.waitForTimeout(2400);
 results.journeysFraming = await page.locator('[data-framing-for="journeys"]').textContent();
 results.captionAtJourneys = await page.locator('#caption').textContent();
 await page.screenshot({ path: 'scripts/.shots/shot-journeys.png' });
+
+// Regression: relabelling a button must not destroy its prefixed icon.
+await page.evaluate(() => { document.getElementById('guidance')?.scrollIntoView(); });
+await page.waitForTimeout(1200);
+const breath = page.getByRole('button', { name: /breathe with me/i }).first();
+await breath.click();
+await page.waitForTimeout(400);
+results.breathKeptIcon = await page.locator('.breath .btn .icon').count();
+results.breathRelabelled = await breath.textContent();
+await breath.click();
 
 // Journal in testimony
 await page.evaluate(() => { document.getElementById('testimony')?.scrollIntoView(); });

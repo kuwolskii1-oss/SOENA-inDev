@@ -73,6 +73,12 @@ export function startScroll(reducedMotion: boolean): void {
   });
 }
 
+/** The avenue most recently scrolled into view, for late-arriving code. */
+let current = 'threshold';
+export function currentAvenue(): string {
+  return current;
+}
+
 export function observeSections(): void {
   const sections = document.querySelectorAll<HTMLElement>('[data-avenue]');
   const io = new IntersectionObserver(
@@ -80,6 +86,7 @@ export function observeSections(): void {
       for (const entry of entries) {
         if (entry.isIntersecting) {
           const id = (entry.target as HTMLElement).dataset.avenue!;
+          current = id;
           emit('avenue:enter', { id });
           if (id !== 'threshold') rememberAvenue(id);
         }

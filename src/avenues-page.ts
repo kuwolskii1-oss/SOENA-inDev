@@ -43,9 +43,6 @@ on('avenue:enter', ({ id }) => {
     aura.style.setProperty('--aura-h1', String(avenue.hues[0]));
     aura.style.setProperty('--aura-h2', String(avenue.hues[1]));
   }
-  document.querySelectorAll('#ways a').forEach((a) => {
-    a.classList.toggle('is-active', a.getAttribute('href') === `#${id}`);
-  });
   if (avenue) {
     speakAvenue(id);
     if (loadProfile()) {
