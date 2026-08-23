@@ -110,6 +110,45 @@ body {
 }
 #gl.is-live { opacity: 1; }
 
+/* The tide-glass figure: two sprite layers seated on the page's exact
+   bottom-left corner. Height rides the viewport; width follows the
+   sprite's own aspect. All motion is transform-only (see figure.ts). */
+#figure {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
+  height: 34vh;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.4s var(--ease);
+}
+#figure.is-here { opacity: 1; }
+.figure-stage {
+  position: relative;
+  height: 100%;
+  transform-origin: 12% 96%;
+  will-change: transform;
+}
+.figure-body {
+  display: block;
+  height: 100%;
+  width: auto;
+  user-select: none;
+}
+.figure-head {
+  position: absolute;
+  will-change: transform;
+  user-select: none;
+}
+.figure-glow {
+  position: absolute;
+  inset: -18%;
+  z-index: -1;
+  opacity: 0.55;
+  transition: opacity 0.8s linear, background 1.2s linear;
+}
+
 main, header, footer { position: relative; z-index: 2; }
 
 /* ---------------------------------------------------------------

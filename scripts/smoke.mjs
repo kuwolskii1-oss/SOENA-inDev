@@ -78,7 +78,25 @@ await page.getByRole('button', { name: 'Open the door' }).click();
 await page.waitForTimeout(4200);
 
 results.greeting = await page.locator('#hero-line').textContent();
-results.canvasLive = await page.locator('#gl.is-live').count();
+
+// The tide-glass figure: a DOM sprite pair (body + feathered head), no
+// WebGL and no CDN, pinned to the page's exact bottom-left corner.
+await page.waitForSelector('#figure.is-here', { timeout: 8000 });
+results.figureLayers = await page.locator('#figure img').count();
+results.figurePinned = await page.evaluate(() => {
+  const r = document.getElementById('figure').getBoundingClientRect();
+  return Math.round(r.left) === 0 && Math.abs(r.bottom - window.innerHeight) < 2;
+});
+// The head must follow the cursor's height: up when high, down when low.
+await page.mouse.move(720, 80);
+await page.waitForTimeout(900);
+const headUp = await page.evaluate(() => document.querySelector('.figure-head').style.transform);
+await page.mouse.move(720, 860);
+await page.waitForTimeout(900);
+const headDown = await page.evaluate(() => document.querySelector('.figure-head').style.transform);
+const deg = (s) => parseFloat((s.match(/rotate\((-?[\d.]+)deg/) ?? [0, 'NaN'])[1]);
+results.headTracksCursor = deg(headUp) < deg(headDown);
+results.headRange = `${deg(headUp)} .. ${deg(headDown)}`;
 results.profile = await page.evaluate(() => localStorage.getItem('soena.profile.v1'));
 results.voiceSwitchRole = await page.locator('#voice-toggle').getAttribute('role');
 results.letsTalkGone = (await page.locator('#chat-open').count()) === 0;
