@@ -69,6 +69,10 @@ export class SoenaScene {
   private currentX = 0;
   private scrollVelocity = 0;
 
+  // Corner staging (the landing): the orb shrinks and settles low.
+  private stage = 1;
+  private stageTarget = 1;
+
   constructor(canvas: HTMLCanvasElement, quality: Quality) {
     this.renderer = new WebGLRenderer({
       canvas,
@@ -100,6 +104,7 @@ export class SoenaScene {
       new ShaderMaterial({ vertexShader: ORB_VERTEX, fragmentShader: ORB_FRAGMENT, uniforms: shared }),
     );
     // The companion is a presence, not a planet: keep it modest.
+    // (Scale is re-applied every frame with the stage factor in render().)
     this.orb.scale.setScalar(0.68);
     this.scene.add(this.orb);
 
@@ -183,6 +188,11 @@ export class SoenaScene {
     this.anchorX = x;
   }
 
+  /** Stage scale: 1 full presence, smaller as the corner avatar. */
+  setStage(scale: number): void {
+    this.stageTarget = scale;
+  }
+
   setScrollVelocity(v: number): void {
     this.scrollVelocity = v;
   }
@@ -215,8 +225,14 @@ export class SoenaScene {
     const targetX = this.anchorX * worldHalfWidth * 0.52;
     this.currentX += (targetX - this.currentX) * (1 - Math.exp(-dt * 2.2));
 
+    this.stage += (this.stageTarget - this.stage) * (1 - Math.exp(-dt * 2.5));
+    this.orb.scale.setScalar(0.68 * this.stage);
+    this.halo.scale.setScalar(0.82 * this.stage);
+    // As it shrinks toward avatar size it also settles toward the floor.
+    const stageY = (1 - this.stage) * -1.7;
+
     const group = [this.orb, this.glow, this.halo] as const;
-    const bobY = Math.sin(t * 0.6) * 0.08 - this.scrollVelocity * 0.006;
+    const bobY = stageY + Math.sin(t * 0.6) * 0.08 - this.scrollVelocity * 0.006;
     for (const obj of group) {
       obj.position.x = this.currentX + this.pointer.x * 0.18;
       obj.position.y = (obj === this.glow ? -0.02 : 0) + bobY + this.pointer.y * 0.12;

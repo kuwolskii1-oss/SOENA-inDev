@@ -71,7 +71,9 @@ results.profile = await page.evaluate(() => localStorage.getItem('soena.profile.
 
 await page.screenshot({ path: 'scripts/.shots/shot-threshold.png' });
 
-// Scroll to an avenue, check framing personalization + orb caption
+// The avenues live on their own page now; the landing never scrolls.
+await page.goto('http://localhost:4173/avenues.html', { waitUntil: 'networkidle' });
+await page.waitForTimeout(1400);
 await page.locator('#ways a[href="#journeys"]').click();
 await page.waitForTimeout(2200);
 results.journeysFraming = await page.locator('[data-framing-for="journeys"]').textContent();
@@ -112,8 +114,8 @@ results.memoryPanel = await page.locator('.memory-sheet h2').textContent();
 await page.screenshot({ path: 'scripts/.shots/shot-memory.png' });
 await page.getByRole('button', { name: 'Close' }).click();
 
-// Reload: returning-visitor greeting (typed into the hero line)
-await page.reload({ waitUntil: 'networkidle' });
+// Back to the landing: returning-visitor greeting (typed into the hero line)
+await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
 await page.waitForTimeout(4600);
 results.returningOnboardingShown = await page.locator('.threshold-panel').count();
 results.returningGreeting = await page.locator('#hero-line').textContent();

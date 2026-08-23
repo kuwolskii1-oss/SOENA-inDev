@@ -21,7 +21,7 @@ export default defineConfig({
       // normal build ships both pages.
       input: singlefile
         ? { main: process.env.SOENA_SINGLEFILE_ENTRY ?? 'index.html' }
-        : { main: 'index.html', contact: 'contact.html' },
+        : { main: 'index.html', avenues: 'avenues.html', contact: 'contact.html' },
       output: singlefile
         ? { inlineDynamicImports: true }
         : {

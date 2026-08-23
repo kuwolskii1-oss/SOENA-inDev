@@ -224,9 +224,9 @@ export class CharacterScene {
     }
   }
 
-  /** Hero staging: larger presence on the threshold, normal in avenues. */
-  setStage(hero: boolean): void {
-    this.stageTarget = hero ? 1.75 : 1;
+  /** Stage scale: 1 walking the avenues, smaller as the corner avatar. */
+  setStage(scale: number): void {
+    this.stageTarget = scale;
   }
 
   setHues(h1: number, h2: number): void {
@@ -313,10 +313,7 @@ export class CharacterScene {
       this.headBone.rotation.x += this.gazePitch;
     }
 
-    // Waist-up framing on the threshold stage: the camera rises so the
-    // head owns the upper half and the feet fall out of frame.
-    const camTargetY = this.stageTarget > 1 ? 0.62 : 0;
-    this.camera.position.y += (camTargetY - this.camera.position.y) * (1 - Math.exp(-dt * 2.2));
+    this.camera.position.y += (0 - this.camera.position.y) * (1 - Math.exp(-dt * 2.2));
 
     const r = this.rig;
     const dx = this.walkTargetX - r.position.x;
