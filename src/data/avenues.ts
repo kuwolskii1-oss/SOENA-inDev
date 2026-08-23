@@ -6,6 +6,8 @@
  * hears "what your life keeps asking of you" — without ranking either.
  * Tokens like {name}, {their}, {are} are filled by the pronoun engine.
  */
+import type { EmblemName } from '../ui/icons';
+
 export interface Door {
   title: string;
   body: string;
@@ -19,6 +21,8 @@ export interface Avenue {
   tagline: string;
   /** Hue accents for the companion when this avenue is active. [h1, h2] in degrees. */
   hues: [number, number];
+  /** Phosphor duotone emblem that marks this avenue. */
+  emblem: EmblemName;
   intro: string;
   framings: Record<string, string>;
   companionLine: string;
@@ -31,6 +35,7 @@ export const AVENUES: Avenue[] = [
     title: 'Journeys',
     tagline: 'where you have been, where you are going',
     hues: [255, 205],
+    emblem: 'path',
     intro:
       'A journey is not a route. It is the shape your life makes when you look back at it kindly, and the direction it leans when you stop steering for a moment.',
     framings: {
@@ -55,6 +60,7 @@ export const AVENUES: Avenue[] = [
     title: 'Callings',
     tagline: 'what keeps asking for you',
     hues: [35, 55],
+    emblem: 'bell-simple-ringing',
     intro:
       'A calling is anything that keeps returning to you when the noise dies down — a work, a person, a question, a repair the world seems to have addressed to you by name.',
     framings: {
@@ -79,6 +85,7 @@ export const AVENUES: Avenue[] = [
     title: 'Encounters',
     tagline: 'the moments that met you',
     hues: [300, 340],
+    emblem: 'sparkle',
     intro:
       'An encounter is a moment that arrived from outside your plans — awe under a night sky, a stranger’s uncanny kindness, a silence that felt inhabited, a coincidence that would not stay small.',
     framings: {
@@ -103,6 +110,7 @@ export const AVENUES: Avenue[] = [
     title: 'Guidance',
     tagline: 'ways of choosing when the fog is thick',
     hues: [190, 220],
+    emblem: 'compass',
     intro:
       'Guidance is not being told what to do. It is widening the council you consult — conscience, tradition, reason, body, trusted friends, time — until a direction becomes honest.',
     framings: {
@@ -127,6 +135,7 @@ export const AVENUES: Avenue[] = [
     title: 'Community',
     tagline: 'you were not meant to walk alone',
     hues: [140, 100],
+    emblem: 'users-three',
     intro:
       'Every path — monastic or secular, ancient or self-made — eventually says the same thing: find your people. Community is where a private path gains witnesses, correction and warmth.',
     framings: {
@@ -151,6 +160,7 @@ export const AVENUES: Avenue[] = [
     title: 'Testimony',
     tagline: 'saying what happened, in your own words',
     hues: [15, 350],
+    emblem: 'feather',
     intro:
       'Testimony is the practice of telling the truth about your inner life — first to yourself, on a page, and someday, if you choose, to another. What is written here stays in this device. I keep it; I do not send it.',
     framings: {
@@ -173,6 +183,7 @@ export const AVENUES: Avenue[] = [
     title: 'Experience',
     tagline: 'practices, not just ideas',
     hues: [265, 285],
+    emblem: 'wind',
     intro:
       'A path becomes real in the body and the calendar or not at all. Experience is the avenue of practice: small, repeatable acts of attention that any tradition — or none — can carry.',
     framings: {
@@ -197,6 +208,7 @@ export const AVENUES: Avenue[] = [
     title: 'Consolidation',
     tagline: 'gathering what the road has given',
     hues: [45, 25],
+    emblem: 'basket',
     intro:
       'Every so often a path asks to be gathered: what has held, what has fallen away, what deserves to be carried forward on purpose. Consolidation is harvest, not conclusion.',
     framings: {

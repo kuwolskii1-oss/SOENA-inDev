@@ -16,6 +16,7 @@ import {
 } from '../core/profile';
 import { ORIENTATIONS } from '../data/orientations';
 import { COMPANION_FORMS } from '../data/companion-config';
+import { prefixIcon, type IconName } from './icons';
 
 interface Draft {
   name: string;
@@ -67,8 +68,8 @@ export function runOnboarding(onDone: (entered: boolean) => void): void {
         'I am SOENA.',
         'A companion at the door. I walk beside journeys of every kind — with gods, without them, through philosophy, psyche, feeling, earth, or honest not-knowing. May I learn how to walk beside yours?',
         [
-          btn('Yes — let us begin', 'primary', () => next()),
-          btn('Enter quietly', 'ghost', () => finish(false)),
+          btn('Yes — let us begin', 'primary', () => next(), 'arrow-right'),
+          btn('Enter quietly', 'ghost', () => finish(false), 'door-open'),
         ],
       ),
     // 1 — name
@@ -87,8 +88,8 @@ export function runOnboarding(onDone: (entered: boolean) => void): void {
       });
       p.insertBefore(input, p.querySelector('.threshold-actions'));
       p.querySelector('.threshold-actions')!.append(
-        btn('Continue', 'primary', () => next()),
-        btn('Skip', 'ghost', () => next()),
+        btn('Continue', 'primary', () => next(), 'arrow-right'),
+        btn('Skip', 'ghost', () => next(), 'chevron-right'),
       );
       queueMicrotask(() => input.focus());
       return p;
@@ -155,7 +156,7 @@ export function runOnboarding(onDone: (entered: boolean) => void): void {
 
       p.insertBefore(wrap, p.querySelector('.threshold-actions'));
       p.insertBefore(custom, p.querySelector('.threshold-actions'));
-      p.querySelector('.threshold-actions')!.append(btn('Continue', 'primary', () => next()));
+      p.querySelector('.threshold-actions')!.append(btn('Continue', 'primary', () => next(), 'arrow-right'));
       refresh();
       return p;
     },
@@ -180,7 +181,7 @@ export function runOnboarding(onDone: (entered: boolean) => void): void {
         grid.appendChild(c);
       });
       p.insertBefore(grid, p.querySelector('.threshold-actions'));
-      p.querySelector('.threshold-actions')!.append(btn('Continue', 'primary', () => next()));
+      p.querySelector('.threshold-actions')!.append(btn('Continue', 'primary', () => next(), 'arrow-right'));
       return p;
     },
     // 4 — intentions
@@ -199,7 +200,7 @@ export function runOnboarding(onDone: (entered: boolean) => void): void {
         wrap.appendChild(b);
       });
       p.insertBefore(wrap, p.querySelector('.threshold-actions'));
-      p.querySelector('.threshold-actions')!.append(btn('Continue', 'primary', () => next()));
+      p.querySelector('.threshold-actions')!.append(btn('Continue', 'primary', () => next(), 'arrow-right'));
       return p;
     },
     // 5 — form
@@ -217,7 +218,7 @@ export function runOnboarding(onDone: (entered: boolean) => void): void {
         wrap.appendChild(b);
       });
       p.insertBefore(wrap, p.querySelector('.threshold-actions'));
-      p.querySelector('.threshold-actions')!.append(btn('Continue', 'primary', () => next()));
+      p.querySelector('.threshold-actions')!.append(btn('Continue', 'primary', () => next(), 'arrow-right'));
       return p;
     },
     // 6 — tone + consent
@@ -246,8 +247,8 @@ export function runOnboarding(onDone: (entered: boolean) => void): void {
       });
       p.insertBefore(wrap, p.querySelector('.threshold-actions'));
       p.querySelector('.threshold-actions')!.append(
-        btn('Open the door', 'primary', () => finish(true)),
-        btn('Enter without being remembered', 'ghost', () => finish(false)),
+        btn('Open the door', 'primary', () => finish(true), 'door-open'),
+        btn('Enter without being remembered', 'ghost', () => finish(false), 'x'),
       );
       return p;
     },
@@ -284,11 +285,17 @@ function panel(title: string, body: string, actions: HTMLElement[]): HTMLElement
   return el;
 }
 
-function btn(label: string, kind: 'primary' | 'ghost' | 'chip', onClick: () => void): HTMLButtonElement {
+function btn(
+  label: string,
+  kind: 'primary' | 'ghost' | 'chip',
+  onClick: () => void,
+  glyph?: IconName,
+): HTMLButtonElement {
   const b = document.createElement('button');
   b.type = 'button';
   b.className = `btn btn--${kind}`;
   b.textContent = label;
+  if (glyph) prefixIcon(b, glyph);
   b.addEventListener('click', onClick);
   return b;
 }

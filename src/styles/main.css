@@ -240,10 +240,14 @@ main, header, footer { position: relative; z-index: 2; }
 .avenue--text-left .avenue-inner { margin-right: auto; }
 
 .avenue-index {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
   font-size: 0.8rem;
   letter-spacing: 0.4em;
   color: var(--ink-faint);
 }
+.avenue-emblem { width: 1.9rem; height: 1.9rem; }
 
 .avenue-title {
   font-family: var(--serif);
@@ -296,6 +300,9 @@ main, header, footer { position: relative; z-index: 2; }
   font-weight: 480;
   font-size: 1.15rem;
 }
+.door h3 .icon { width: 1.1rem; height: 1.1rem; color: var(--accent); }
+.journal-entry header .icon { width: 0.85rem; height: 0.85rem; }
+.voices-title .icon { width: 1.15rem; height: 1.15rem; color: var(--accent); }
 .door p { margin: 0; color: var(--ink-dim); line-height: 1.65; font-size: 0.95rem; }
 
 /* Buttons & chips */
@@ -546,7 +553,16 @@ select.threshold-input option { background: #f4f4f6; color: var(--ink); }
 .memory-sheet { max-height: 88vh; overflow-y: auto; padding-right: 0.4rem; }
 .memory-note { font-size: 0.9rem; }
 .memory-field { margin: 1.1rem 0; display: grid; gap: 0.5rem; }
-.memory-field > label { font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+.memory-field > label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.memory-field > label .icon { width: 1rem; height: 1rem; color: var(--accent); }
 .memory-trace { color: var(--ink-faint); font-size: 0.85rem; margin-top: 1.6rem; }
 .keepsakes { list-style: none; margin: 0 0 0.6rem; padding: 0; display: grid; gap: 0.4rem; }
 .keepsakes li {
@@ -662,7 +678,8 @@ select.threshold-input option { background: #f4f4f6; color: var(--ink); }
   font-size: 0.85rem;
   color: var(--ink-dim);
 }
-.chat-head .btn { font-size: 0.72rem; padding: 0.25rem 0.8rem; }
+.chat-head > span { display: inline-flex; align-items: center; gap: 0.45rem; }
+.chat-head .btn--icon { width: 1.9rem; height: 1.9rem; }
 
 .chat-log {
   flex: 1;
@@ -781,6 +798,43 @@ html.lenis, html.lenis body { height: auto; }
 
 
 /* ---------------------------------------------------------------
+   Icons — Lucide for controls, Phosphor duotone for avenue emblems
+   --------------------------------------------------------------- */
+
+.icon {
+  flex: none;
+  vertical-align: -0.15em;
+  /* Icons ride the text they label, so they inherit its colour and size. */
+}
+
+.emblem {
+  flex: none;
+  color: var(--accent);
+}
+/* Duotone's background layer is the second path; soften it so the mark
+   reads as one tinted glyph rather than two competing shapes. */
+.emblem > *:first-child { opacity: 0.24; }
+
+/* Any control carrying an icon lines it up with its label. */
+.has-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.btn.has-icon { justify-content: center; }
+
+/* Icon-only controls: square, and the label lives in aria-label. */
+.btn--icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  font-size: 1rem;
+}
+.btn--icon .icon { width: 1.05em; height: 1.05em; }
+
+/* ---------------------------------------------------------------
    Nav drawer + voice switch
    --------------------------------------------------------------- */
 
@@ -833,14 +887,18 @@ html.lenis, html.lenis body { height: auto; }
 
 .drawer-list { display: grid; gap: 0.15rem; }
 .drawer-list a {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
   font-family: var(--serif);
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   color: var(--ink);
   text-decoration: none;
-  padding: 0.45rem 0;
+  padding: 0.5rem 0;
   border-bottom: 1px solid var(--veil);
   transition: color 0.3s, padding-left 0.3s;
 }
+.drawer-list a .emblem, .drawer-list a .icon { width: 1.35rem; height: 1.35rem; }
 .drawer-list a:hover, .drawer-list a:focus-visible { color: var(--accent); padding-left: 0.4rem; }
 
 /* Voice switch */
@@ -872,6 +930,12 @@ html.lenis, html.lenis body { height: auto; }
   box-shadow: 0 1px 2px rgba(4, 35, 28, 0.3);
   transition: transform 0.3s var(--ease);
 }
+/* Only one speaker shows at a time: crossed-out when off, open when on. */
+.switch-icon { width: 1em; height: 1em; color: var(--ink-faint); transition: color 0.3s; }
+.switch .switch-icon--on { display: none; }
+.switch.is-on .switch-icon--off { display: none; }
+.switch.is-on .switch-icon--on { display: inline; color: var(--accent); }
+
 .head-actions button.switch.is-on .switch-track { background: var(--accent); }
 .head-actions button.switch.is-on .switch-thumb { transform: translateX(0.9rem); }
 .head-actions button.switch:hover:not(:disabled) .switch-track { background: var(--veil-strong); }

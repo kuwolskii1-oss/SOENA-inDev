@@ -66,6 +66,14 @@ results.canvasLive = await page.locator('#gl.is-live').count();
 results.profile = await page.evaluate(() => localStorage.getItem('soena.profile.v1'));
 results.voiceSwitchRole = await page.locator('#voice-toggle').getAttribute('role');
 results.letsTalkGone = (await page.locator('#chat-open').count()) === 0;
+// Icons: chrome (Lucide) present, and decorative ones hidden from AT.
+results.iconCount = await page.locator('svg.icon').count();
+results.chipIcons = await page.locator('#hero-chips .btn .icon').count();
+results.iconsAriaHidden = await page.evaluate(() =>
+  [...document.querySelectorAll('svg.icon')].every(
+    (s) => s.getAttribute('aria-hidden') === 'true' || s.hasAttribute('aria-label'),
+  ),
+);
 
 await page.screenshot({ path: 'scripts/.shots/shot-threshold.png' });
 
@@ -101,9 +109,11 @@ await page.screenshot({ path: 'scripts/.shots/shot-memory.png' });
 await page.goto('http://localhost:4173/avenues.html', { waitUntil: 'networkidle' });
 await page.waitForTimeout(1400);
 results.navItems = await page.locator('#ways > *').count(); // communities + drawer
+results.avenueEmblems = await page.locator('.avenue-emblem').count();
 await page.locator('#drawer-open').click();
 await page.waitForTimeout(700);
 results.drawerLinks = await page.locator('.drawer-list a').count();
+results.drawerEmblems = await page.locator('.drawer-list .emblem').count();
 await page.screenshot({ path: 'scripts/.shots/shot-drawer.png' });
 await page.locator('.drawer-list a[href="#journeys"]').click();
 await page.waitForTimeout(2400);

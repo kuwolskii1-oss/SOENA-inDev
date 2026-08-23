@@ -6,6 +6,7 @@ import { loadProfile, saveProfile } from '../core/profile';
 import { setVoiceEnabled, speechSupported } from '../core/speech';
 import { say } from '../companion/dialogue';
 import { openMemoryPanel } from './memory';
+import { iconSvg, prefixIcon } from './icons';
 
 export function initHeaderControls(): void {
   const voiceBtn = document.getElementById('voice-toggle') as HTMLButtonElement | null;
@@ -14,8 +15,9 @@ export function initHeaderControls(): void {
     voiceBtn.classList.add('switch');
     voiceBtn.setAttribute('role', 'switch');
     voiceBtn.removeAttribute('aria-pressed');
-    voiceBtn.innerHTML =
-      '<span class="switch-label">voice</span><span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>';
+    // Speaker icon + word + track; the icon crosses out when voice is off,
+    // so the switch reads at a glance without depending on colour alone.
+    voiceBtn.innerHTML = `${iconSvg('volume-x', { className: 'switch-icon switch-icon--off' })}${iconSvg('volume-2', { className: 'switch-icon switch-icon--on' })}<span class="switch-label">voice</span><span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>`;
     if (!speechSupported()) {
       voiceBtn.disabled = true;
       voiceBtn.setAttribute('aria-checked', 'false');
@@ -40,5 +42,9 @@ export function initHeaderControls(): void {
     }
   }
 
-  document.getElementById('memory-open')?.addEventListener('click', openMemoryPanel);
+  const memoryBtn = document.getElementById('memory-open');
+  if (memoryBtn) {
+    prefixIcon(memoryBtn as HTMLElement, 'brain');
+    memoryBtn.addEventListener('click', openMemoryPanel);
+  }
 }
