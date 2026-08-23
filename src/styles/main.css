@@ -633,7 +633,11 @@ select.threshold-input option { background: #f4f4f6; color: var(--ink); }
 .reach-note { color: var(--ink-faint); font-size: 0.88rem; line-height: 1.6; margin: 0; }
 
 .coda-reach {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  justify-self: center;
+  width: max-content;
   margin-top: 1.4rem;
   color: var(--ink-faint);
   font-size: 0.9rem;
@@ -744,7 +748,7 @@ select.threshold-input option { background: #f4f4f6; color: var(--ink); }
   padding: 0.55rem 1rem;
 }
 .chat-input:focus-visible { outline: none; border-color: var(--accent); }
-.chat-form .btn { font-size: 0.85rem; padding: 0.5rem 1.1rem; }
+.chat-form .btn:not(.btn--icon) { font-size: 0.85rem; padding: 0.5rem 1.1rem; }
 
 /* SOENA's wand-light on a piece of the page */
 .soena-spotlight {
@@ -883,7 +887,7 @@ html.lenis, html.lenis body { height: auto; }
   font-size: 0.85rem;
   color: var(--ink-dim);
 }
-.drawer-head .btn { font-size: 0.72rem; padding: 0.3rem 0.8rem; }
+.drawer-head .btn:not(.btn--icon) { font-size: 0.72rem; padding: 0.3rem 0.8rem; }
 
 .drawer-list { display: grid; gap: 0.15rem; }
 .drawer-list a {
@@ -931,7 +935,7 @@ html.lenis, html.lenis body { height: auto; }
   transition: transform 0.3s var(--ease);
 }
 /* Only one speaker shows at a time: crossed-out when off, open when on. */
-.switch-icon { width: 1em; height: 1em; color: var(--ink-faint); transition: color 0.3s; }
+.switch-icon { width: 1em; height: 1em; color: var(--ink-dim); transition: color 0.3s; }
 .switch .switch-icon--on { display: none; }
 .switch.is-on .switch-icon--off { display: none; }
 .switch.is-on .switch-icon--on { display: inline; color: var(--accent); }
@@ -948,3 +952,7 @@ html.lenis, html.lenis body { height: auto; }
 body.landing { overflow: hidden; height: 100svh; }
 body.landing #boot-hero { height: 100svh; min-height: 0; }
 body.landing .hero-left { position: relative; z-index: 2; }
+
+/* The label a prefixed icon sits beside; relabelling writes here so the
+   icon is never destroyed (see setLabel in ui/icons.ts). */
+.btn-label { display: inline; }

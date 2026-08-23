@@ -17,7 +17,7 @@ import { ORIENTATIONS } from '../data/orientations';
 import { COMPANION_FORMS } from '../data/companion-config';
 import { loadJournal } from './journal';
 import { say, speakErased, speakMemoryOpened } from '../companion/dialogue';
-import { prefixIcon, type IconName } from './icons';
+import { prefixIcon, setLabel, type IconName } from './icons';
 
 export function openMemoryPanel(): void {
   const root = document.getElementById('overlay-root');
@@ -212,7 +212,7 @@ export function openMemoryPanel(): void {
     const erase = button('Erase everything I know', 'danger', () => {
       if (erase.dataset.confirm !== '1') {
         erase.dataset.confirm = '1';
-        erase.textContent = 'Are you certain? This forgets it all.';
+        setLabel(erase, 'Are you certain? This forgets it all.');
         return;
       }
       eraseAllMemory();
@@ -236,13 +236,40 @@ export function openMemoryPanel(): void {
   speakMemoryOpened();
 }
 
+let fieldSeq = 0;
+
+/**
+ * A labelled row. The label must actually be tied to what it labels:
+ * for a real form control that is `for`/`id`, and for a group of chips
+ * (which is a div, not a control) it is role="group" + aria-labelledby.
+ * Without this the panel is a row of unnamed comboboxes to a screen
+ * reader, and clicking the words does not focus the field.
+ */
 function field(label: string, glyph: IconName, build: () => HTMLElement): HTMLElement {
   const wrap = document.createElement('div');
   wrap.className = 'memory-field';
+  const control = build();
+  const id = `memory-field-${++fieldSeq}`;
   const l = document.createElement('label');
   l.textContent = label;
+
+  const isControl =
+    control instanceof HTMLInputElement ||
+    control instanceof HTMLSelectElement ||
+    control instanceof HTMLTextAreaElement;
+
+  if (isControl) {
+    if (!control.id) control.id = id;
+    l.htmlFor = control.id;
+  } else {
+    // A container of controls: name it as a group instead.
+    l.id = `${id}-label`;
+    control.setAttribute('role', 'group');
+    control.setAttribute('aria-labelledby', l.id);
+  }
+
   prefixIcon(l, glyph);
-  wrap.append(l, build());
+  wrap.append(l, control);
   return wrap;
 }
 

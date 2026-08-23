@@ -10,7 +10,7 @@
 import { emit } from '../core/bus';
 import { fill, loadProfile } from '../core/profile';
 import { say } from '../companion/dialogue';
-import { prefixIcon, type IconName } from './icons';
+import { prefixIcon, setLabel, type IconName } from './icons';
 
 /** Where letters go. Change this when SOENA has a real inbox. */
 const CONTACT_EMAIL = 'hello@soena.example';
@@ -92,6 +92,9 @@ export function renderReach(mount: HTMLElement): void {
   function showStep1(): void {
     if (!branch) return;
     say(branch.ask, 'guiding');
+    // A new branch retires any letter already folded from the old one.
+    step2.hidden = true;
+    step2.replaceChildren();
     step1.hidden = false;
     step1.replaceChildren();
 
@@ -156,9 +159,9 @@ export function renderReach(mount: HTMLElement): void {
     const copy = button('Copy the letter', 'ghost', async () => {
       try {
         await navigator.clipboard.writeText(lines);
-        copy.textContent = 'Copied — safe travels';
+        setLabel(copy, 'Copied — safe travels');
       } catch {
-        copy.textContent = 'Select and copy it above';
+        setLabel(copy, 'Select and copy it above');
       }
     });
     prefixIcon(copy, 'copy');
@@ -191,17 +194,23 @@ function heading(text: string): HTMLElement {
   return h;
 }
 
+let fieldSeq = 0;
+
 function fieldRow(label: string, type: string, value: string, placeholder: string): HTMLElement {
   const wrap = document.createElement('div');
   wrap.className = 'memory-field';
-  const l = document.createElement('label');
-  l.textContent = label;
   const input = document.createElement('input');
   input.className = 'threshold-input';
+  input.id = `reach-field-${++fieldSeq}`;
   input.type = type;
   input.value = value;
   input.placeholder = placeholder;
   input.maxLength = 120;
+  // Without htmlFor the label is decoration: no accessible name, and
+  // clicking the words would not focus the field.
+  const l = document.createElement('label');
+  l.textContent = label;
+  l.htmlFor = input.id;
   wrap.append(l, input);
   return wrap;
 }

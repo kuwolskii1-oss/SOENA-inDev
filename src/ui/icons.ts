@@ -101,11 +101,32 @@ export function emblemSvg(name: EmblemName, opts: IconOptions = {}): string {
   return `<svg class="emblem ${opts.className ?? ''}" width="${dim}" height="${dim}" viewBox="0 0 256 256" fill="currentColor" ${labelled}>${body}</svg>`;
 }
 
-/** Prepend an icon to a button (or any element) that already has text. */
+/**
+ * Prepend an icon to an element that already has text.
+ *
+ * The existing text is moved into its own <span class="btn-label"> so a
+ * later relabel can swap the words without destroying the icon — use
+ * `setLabel` for that, never `el.textContent = …`, which would wipe
+ * every child including the svg.
+ */
 export function prefixIcon(el: HTMLElement, name: IconName, opts: IconOptions = {}): void {
+  if (!el.querySelector('.btn-label')) {
+    const label = document.createElement('span');
+    label.className = 'btn-label';
+    // Move existing children (usually one text node) into the label.
+    while (el.firstChild) label.appendChild(el.firstChild);
+    el.appendChild(label);
+  }
   const svg = icon(name, opts);
   if (svg) el.prepend(svg);
   el.classList.add('has-icon');
+}
+
+/** Relabel an element that may carry a prefixed icon, keeping the icon. */
+export function setLabel(el: HTMLElement, text: string): void {
+  const label = el.querySelector('.btn-label');
+  if (label) label.textContent = text;
+  else el.textContent = text;
 }
 
 function escapeAttr(value: string): string {

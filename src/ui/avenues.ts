@@ -9,7 +9,7 @@
 import { on } from '../core/bus';
 import { fill, loadProfile } from '../core/profile';
 import { addLore } from '../core/lore';
-import { emblemSvg, iconSvg, prefixIcon, type IconName } from './icons';
+import { emblemSvg, iconSvg, prefixIcon, setLabel, type IconName } from './icons';
 import { AVENUES, type Avenue, type Door } from '../data/avenues';
 import { speakJournalSaved } from '../companion/dialogue';
 import { addEntry, deleteEntry, formatDate, loadJournal } from './journal';
@@ -140,13 +140,13 @@ function renderBreath(): HTMLElement {
     window.clearTimeout(timer);
     circle.classList.remove('is-in', 'is-out');
     label.textContent = '';
-    start.textContent = 'Breathe with me';
+    setLabel(start, 'Breathe with me');
   };
 
   start.addEventListener('click', () => {
     if (running) return stop();
     running = true;
-    start.textContent = 'Enough for now';
+    setLabel(start, 'Enough for now');
     let cycle = 0;
     const inhale = () => {
       if (!running) return;
