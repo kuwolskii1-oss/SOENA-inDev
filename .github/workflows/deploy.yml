@@ -45,7 +45,7 @@ jobs:
           mkdir -p dist/models
           fetch() { curl -fsSL --retry 3 -o "dist/models/$1" "$2" || echo "$1 unavailable — orb fallback will carry it"; }
           fetch soena-she.glb "https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260823_171936_cbccfa99-4e2d-4124-ad6e-1170e2d4c7c4.glb"
-          fetch soena-he.glb  "HE_REMOTE_URL"
+          fetch soena-he.glb  "https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260823_172455_e2ae55ba-a228-4a30-88df-96f7ff910c20.glb"
           ls -la dist/models
 
       - uses: actions/configure-pages@v5

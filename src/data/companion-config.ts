@@ -39,7 +39,7 @@ export const COMPANION_FORMS: CompanionForm[] = [
     localPath: './models/soena-he.glb',
     localAvailable: true,
     // Converted from the supplied seated translucent male reference.
-    remoteUrl: 'HE_REMOTE_URL',
+    remoteUrl: 'https://d8j0ntlcm91z4.cloudfront.net/user_3ExYiHyupSF2psOwNiJ4aHe340s/hf_20260823_172455_e2ae55ba-a228-4a30-88df-96f7ff910c20.glb',
     height: 1.5,
   },
   { id: 'orb', label: 'a living light', height: 1.4 },
