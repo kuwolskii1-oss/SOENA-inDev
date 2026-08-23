@@ -1,32 +1,32 @@
 /**
- * SOENA in a body — the character runtime for the placeholder GLB models.
+ * SOENA in a body — the tide-glass figures.
  *
- * The models are Higgsfield/Meshy conversions (textured, rigged, idle
- * clip). Everything expressive beyond the baked idle is procedural root
- * motion — walking bobs, pointing leans, the wand, the ladder, the
- * scroll-tumble — so any humanoid GLB dropped into /models keeps working
- * without re-authoring animation. Physical comedy through motion curves.
+ * The companions are seated: translucent glass-like figures resting on
+ * the edge of a plinth, generated from the supplied references (image →
+ * Meshy image_to_3d, textured + PBR + rigged, original pose preserved).
+ * They do not walk the page. They keep one post — the exact bottom-left
+ * corner of the viewport, on every page, at every size — like someone
+ * sitting on the edge of the world, watching you read.
+ *
+ * All aliveness is procedural and quiet:
+ *   · the HEAD follows the cursor — pitch rides the cursor's height
+ *     (look up when you reach high, down when you reach low), with a
+ *     small yaw so the attention feels real rather than mechanical;
+ *   · a breathing bob and a slow sway;
+ *   · pulses (from dialogue) breathe the glow a little;
+ *   · a hard scroll leans the figure back for a beat, nothing more.
  */
 import {
-  AdditiveBlending,
   Bone,
   Box3,
-  BoxGeometry,
-  BufferAttribute,
-  BufferGeometry,
   Color,
-  CylinderGeometry,
   DirectionalLight,
   Group,
   HemisphereLight,
   Mesh,
-  MeshBasicMaterial,
   MeshStandardMaterial,
   PerspectiveCamera,
-  Points,
-  PointsMaterial,
   Scene,
-  SphereGeometry,
   Vector3,
   WebGLRenderer,
 } from 'three';
@@ -34,51 +34,37 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import type { Quality } from '../core/quality';
 import type { CompanionForm } from '../data/companion-config';
 
-type CharState = 'idle' | 'walk' | 'point' | 'climbUp' | 'climbDown' | 'fall' | 'land';
-
-const FLOOR_Y = -1.55;
+/** Breathing room between the figure and the true viewport edges. */
+const CORNER_PAD_X = 0.06;
+const CORNER_PAD_Y = 0.02;
 
 export class CharacterScene {
   private renderer: WebGLRenderer;
   private scene = new Scene();
   private camera: PerspectiveCamera;
 
-  private rig = new Group(); // moves around the page
+  /** rig origin = the model's bottom-left corner, so pinning the rig to
+   *  the viewport corner pins the figure regardless of scale. */
+  private rig = new Group();
   private model: Group | null = null;
 
-  // Gaze: the head bone follows the visitor's cursor — the single
-  // strongest "someone is here with you" signal a character can give.
   private headBone: Bone | null = null;
   private gazeYaw = 0;
   private gazePitch = 0;
 
+  /** Brief attention override: look at a spot on the page, then return. */
+  private lookHold = 0;
+  private lookNdc = { x: 0, y: 0 };
+
   private hemi: HemisphereLight;
   private key: DirectionalLight;
-  private tint = new Color('#8b7bff');
-  private tintTarget = new Color('#8b7bff');
-
-  private wand: Group;
-  private wandSparks: Points;
-  private sparkSeeds: Float32Array;
-  private ladder: Group;
-
-  private state: CharState = 'idle';
-  private stateT = 0;
-  private anchorX = 0;
-  private walkTargetX = 0;
-  private climbTopY = 0;
-  private pointWorld = new Vector3();
-  private pointHold = 0;
-  private needsLadder = false;
-  private returnAfterPoint = true;
+  private tint = new Color('#7fd9c8');
+  private tintTarget = new Color('#7fd9c8');
 
   private pulse = 0;
   private pointer = { x: 0, y: 0 };
-  private scrollV = 0;
-  private fallSpin = 0;
+  private lean = 0;
 
-  // On the threshold the companion is the whole scenery; in the avenues
-  // it walks at ordinary size beside the text.
   private stageScale = 1;
   private stageTarget = 1;
 
@@ -89,26 +75,12 @@ export class CharacterScene {
     this.camera = new PerspectiveCamera(35, 1, 0.1, 30);
     this.camera.position.set(0, 0, 6);
 
-    // Soft studio light for the silver backdrop: bright even sky, gentle
-    // grey bounce from below, one key from the upper left like a window.
-    this.hemi = new HemisphereLight(0xffffff, 0xa5a3b0, 1.25);
-    this.key = new DirectionalLight(0xffffff, 1.4);
+    // Bright even sky with a cool bounce — the tide-glass reads best lit
+    // like an aquarium: soft, blue-green, no hard shadows.
+    this.hemi = new HemisphereLight(0xffffff, 0x9fc4bd, 1.25);
+    this.key = new DirectionalLight(0xffffff, 1.3);
     this.key.position.set(-1.2, 3, 3.5);
     this.scene.add(this.hemi, this.key, this.rig);
-
-    this.wand = this.buildWand();
-    this.wand.visible = false;
-    this.rig.add(this.wand);
-
-    const sparks = this.buildSparks(quality.tier === 0 ? 60 : 120);
-    this.wandSparks = sparks.points;
-    this.sparkSeeds = sparks.seeds;
-    this.wandSparks.visible = false;
-    this.scene.add(this.wandSparks);
-
-    this.ladder = this.buildLadder();
-    this.ladder.visible = false;
-    this.scene.add(this.ladder);
 
     this.resize();
   }
@@ -125,22 +97,21 @@ export class CharacterScene {
       try {
         const gltf = await loader.loadAsync(url);
         this.model = gltf.scene;
-        // Normalize: uniform scale to the form's height, feet on the floor.
+        // Normalize to the form's height, then shift so the bounding
+        // box's minimum corner sits at the rig origin — the rig origin
+        // IS the figure's bottom-left, which makes corner-pinning exact.
         const box = new Box3().setFromObject(this.model);
         const size = box.getSize(new Vector3());
         const scale = this.form.height / Math.max(size.y, 0.001);
         this.model.scale.setScalar(scale);
         const scaled = new Box3().setFromObject(this.model);
-        this.model.position.y = -scaled.min.y + FLOOR_Y;
-        this.model.position.x = -(scaled.min.x + scaled.max.x) / 2;
+        this.model.position.x = -scaled.min.x;
+        this.model.position.y = -scaled.min.y;
+        this.model.position.z = -(scaled.min.z + scaled.max.z) / 2;
         this.rig.add(this.model);
 
-        // The baked idle clip is deliberately NOT played — the canned loop
-        // reads wrong. The companion's aliveness comes from the procedural
-        // layer instead: breathing bob, slow sway, and cursor gaze.
-
-        // Find the head (or failing that the neck) in the auto-rig so the
-        // companion can meet the visitor's cursor with its gaze.
+        // Find the head (or failing that the neck) in the auto-rig: the
+        // cursor-following gaze lives on this bone.
         const bones: Bone[] = [];
         this.model.traverse((o) => {
           if ((o as Bone).isBone) bones.push(o as Bone);
@@ -149,6 +120,8 @@ export class CharacterScene {
           bones.find((b) => /head/i.test(b.name)) ??
           bones.find((b) => /neck/i.test(b.name)) ??
           null;
+
+        this.placeCorner();
         return;
       } catch (err) {
         lastErr = err;
@@ -158,77 +131,22 @@ export class CharacterScene {
   }
 
   /* -------------------------------------------------------------- */
-  /* Props                                                           */
-  /* -------------------------------------------------------------- */
-
-  private buildWand(): Group {
-    const g = new Group();
-    const stick = new Mesh(
-      new CylinderGeometry(0.012, 0.02, 0.55, 8),
-      new MeshStandardMaterial({ color: 0x2c2440, roughness: 0.4 }),
-    );
-    stick.position.y = 0.275;
-    const tip = new Mesh(
-      new SphereGeometry(0.045, 12, 12),
-      new MeshBasicMaterial({ color: 0xc9bfff }),
-    );
-    tip.position.y = 0.57;
-    tip.name = 'tip';
-    g.add(stick, tip);
-    return g;
-  }
-
-  private buildSparks(count: number): { points: Points; seeds: Float32Array } {
-    const geo = new BufferGeometry();
-    const pos = new Float32Array(count * 3);
-    const seeds = new Float32Array(count);
-    for (let i = 0; i < count; i++) seeds[i] = Math.random();
-    geo.setAttribute('position', new BufferAttribute(pos, 3));
-    const points = new Points(
-      geo,
-      new PointsMaterial({ color: 0xd9d2ff, size: 0.045, transparent: true, opacity: 0.95, blending: AdditiveBlending, depthWrite: false, sizeAttenuation: true }),
-    );
-    return { points, seeds };
-  }
-
-  private buildLadder(): Group {
-    const g = new Group();
-    const mat = new MeshStandardMaterial({ color: 0x9a7b4f, roughness: 0.8 });
-    const h = 2.6;
-    for (const x of [-0.16, 0.16]) {
-      const rail = new Mesh(new BoxGeometry(0.05, h, 0.05), mat);
-      rail.position.set(x, h / 2, 0);
-      g.add(rail);
-    }
-    for (let i = 0; i < 8; i++) {
-      const rung = new Mesh(new BoxGeometry(0.34, 0.04, 0.04), mat);
-      rung.position.set(0, 0.22 + i * 0.3, 0);
-      g.add(rung);
-    }
-    g.position.y = FLOOR_Y;
-    return g;
-  }
-
-  /* -------------------------------------------------------------- */
   /* Directing                                                        */
   /* -------------------------------------------------------------- */
 
-  setAnchor(x: number): void {
-    this.anchorX = x;
-    if (this.state === 'idle') {
-      this.walkTargetX = x;
-      if (Math.abs(this.rig.position.x - x) > 0.2) this.enter('walk');
-    }
+  /** The post never moves — kept for API compatibility with the orb. */
+  setAnchor(_x: number): void {
+    /* the tide-glass figures always hold the bottom-left corner */
   }
 
-  /** Stage scale: 1 walking the avenues, smaller as the corner avatar. */
+  /** Pages may size the figure (the landing keeps it small). */
   setStage(scale: number): void {
     this.stageTarget = scale;
   }
 
   setHues(h1: number, h2: number): void {
     void h1;
-    this.tintTarget.setHSL(((h2 % 360) + 360) % 360 / 360, 0.6, 0.68);
+    this.tintTarget.setHSL((((h2 % 360) + 360) % 360) / 360, 0.45, 0.72);
   }
 
   setPointer(x: number, y: number): void {
@@ -237,9 +155,8 @@ export class CharacterScene {
   }
 
   setScrollVelocity(v: number): void {
-    this.scrollV = v;
-    // A hard downward fling knocks the little companion off its feet.
-    if (v > 30 && this.state === 'idle') this.enter('fall');
+    // A hard scroll tips the seated figure back a touch, like wind.
+    this.lean = Math.max(-0.12, Math.min(0.12, v * 0.002));
   }
 
   addPulse(strength: number): void {
@@ -247,45 +164,26 @@ export class CharacterScene {
   }
 
   setMood(_mood: string): void {
-    /* Character moods ride on state + pulses; hues carry the tone. */
+    /* moods ride on pulses; hues carry the tone */
   }
 
-  /** Convert a DOM rect centre to world space on the character plane. */
-  private screenToWorld(clientX: number, clientY: number): Vector3 {
-    const ndc = new Vector3((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1, 0.5);
-    ndc.unproject(this.camera);
-    const dir = ndc.sub(this.camera.position).normalize();
-    const t = -this.camera.position.z / dir.z; // plane z = 0
-    return this.camera.position.clone().add(dir.multiplyScalar(t));
-  }
-
-  /** Walk to the target, ladder up if it is high, and point the wand. */
+  /** Attention without locomotion: glance at the element and glow. */
   pointAtElement(el: Element): void {
     const rect = el.getBoundingClientRect();
-    const target = this.screenToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    this.pointWorld.copy(target);
-    this.needsLadder = rect.top < window.innerHeight * 0.34;
-    this.climbTopY = Math.min(target.y - 0.6, FLOOR_Y + 2.0);
-    // Stand beside the target, not on top of it.
-    const side = target.x > 0 ? -1 : 1;
-    this.walkTargetX = target.x + side * (this.needsLadder ? 0.55 : 0.9);
-    this.pointHold = 4.6;
-    this.returnAfterPoint = true;
-    this.enter('walk');
+    this.lookNdc = {
+      x: ((rect.left + rect.width / 2) / window.innerWidth) * 2 - 1,
+      y: -(((rect.top + rect.height / 2) / window.innerHeight) * 2 - 1),
+    };
+    this.lookHold = 3.6;
+    this.addPulse(1);
   }
 
-  private enter(state: CharState): void {
-    this.state = state;
-    this.stateT = 0;
-    if (state === 'point') {
-      this.wand.visible = true;
-      this.wandSparks.visible = true;
-    }
-    if (state === 'climbUp') {
-      this.ladder.visible = true;
-      this.ladder.position.x = this.walkTargetX + (this.pointWorld.x > this.walkTargetX ? 0.35 : -0.35);
-      this.ladder.scale.set(1, 0.01, 1);
-    }
+  /** Pin the rig origin (= model bottom-left) to the viewport corner. */
+  private placeCorner(): void {
+    const halfH = Math.tan((this.camera.fov * Math.PI) / 360) * this.camera.position.z;
+    const halfW = halfH * this.camera.aspect;
+    this.rig.position.x = -halfW + CORNER_PAD_X;
+    this.rig.position.y = -halfH + CORNER_PAD_Y;
   }
 
   /* -------------------------------------------------------------- */
@@ -293,146 +191,38 @@ export class CharacterScene {
   /* -------------------------------------------------------------- */
 
   render(t: number, dt: number): void {
-    this.stateT += dt;
     const k = 1 - Math.exp(-dt * 4);
     this.tint.lerp(this.tintTarget, k);
     this.hemi.color.copy(this.tint);
-    this.pulse *= Math.exp(-dt * 4);
+    this.pulse *= Math.exp(-dt * 3);
+    this.lookHold = Math.max(0, this.lookHold - dt);
+    this.lean *= Math.exp(-dt * 2.2);
 
-    // Gaze tracking: with no clip running the bone pose persists, so the
-    // offset is applied as an absolute target each frame, damped like
-    // real attention.
+    // The head follows the cursor — pitch first (up when the cursor is
+    // high, down when it is low), a little yaw so it reads as attention.
+    // A glance request (pointAtElement) borrows the gaze for a moment.
+    const aim = this.lookHold > 0 ? this.lookNdc : this.pointer;
     if (this.headBone) {
       const gk = 1 - Math.exp(-dt * 5);
-      this.gazeYaw += (this.pointer.x * 0.55 - this.gazeYaw) * gk;
-      this.gazePitch += (-this.pointer.y * 0.32 - this.gazePitch) * gk;
-      this.headBone.rotation.y = this.gazeYaw;
+      this.gazePitch += (-aim.y * 0.5 - this.gazePitch) * gk;
+      this.gazeYaw += (aim.x * 0.25 - this.gazeYaw) * gk;
       this.headBone.rotation.x = this.gazePitch;
+      this.headBone.rotation.y = this.gazeYaw;
     }
 
-    this.camera.position.y += (0 - this.camera.position.y) * (1 - Math.exp(-dt * 2.2));
-
-    const r = this.rig;
-    const dx = this.walkTargetX - r.position.x;
-
+    // Stage scale eases; the corner hold is exact at every size because
+    // the rig origin is the figure's own bottom-left corner.
     this.stageScale += (this.stageTarget - this.stageScale) * (1 - Math.exp(-dt * 2.5));
-    r.scale.setScalar(this.stageScale);
+    const s = this.stageScale * (1 + this.pulse * 0.02);
+    this.rig.scale.setScalar(s);
+    this.placeCorner();
 
-    switch (this.state) {
-      case 'idle': {
-        // Breathing bob, slow sway, occasional glance; wool has moods too.
-        r.position.y += (Math.sin(t * 1.4) * 0.015 - r.position.y) * k;
-        r.rotation.z += (Math.sin(t * 0.7) * 0.02 - r.rotation.z) * k;
-        r.rotation.y += (this.pointer.x * 0.22 + Math.sin(t * 0.23) * 0.12 - r.rotation.y) * k;
-        r.rotation.x += (-this.pulse * 0.06 - r.rotation.x) * (1 - Math.exp(-dt * 10));
-        const s = this.stageScale * (1 + this.pulse * 0.025);
-        r.scale.set(s, s, s);
-        break;
-      }
-      case 'walk': {
-        const dir = Math.sign(dx);
-        const speed = Math.min(Math.abs(dx), 2.2) * 2.4;
-        r.position.x += dir * speed * dt;
-        r.position.y = Math.abs(Math.sin(t * 9)) * 0.05;
-        r.rotation.z = -dir * 0.07;
-        r.rotation.y += (dir * 0.55 - r.rotation.y) * k;
-        if (Math.abs(this.walkTargetX - r.position.x) < 0.06) {
-          r.position.x = this.walkTargetX;
-          if (this.pointHold > 0) this.enter(this.needsLadder ? 'climbUp' : 'point');
-          else this.enter('idle');
-        }
-        break;
-      }
-      case 'climbUp': {
-        // The ladder unfolds, then a rung-by-rung climb.
-        this.ladder.scale.y += (1 - this.ladder.scale.y) * (1 - Math.exp(-dt * 6));
-        if (this.stateT > 0.45) {
-          const progress = Math.min(1, (this.stateT - 0.45) / 1.1);
-          const step = progress * (this.climbTopY - FLOOR_Y);
-          r.position.y = step + Math.abs(Math.sin(progress * Math.PI * 6)) * 0.04;
-          r.rotation.z = Math.sin(progress * Math.PI * 6) * 0.04;
-          if (progress >= 1) this.enter('point');
-        }
-        break;
-      }
-      case 'point': {
-        // Lean toward the target and hold the wand on it.
-        const toward = Math.sign(this.pointWorld.x - r.position.x);
-        r.rotation.y += (toward * 0.7 - r.rotation.y) * k;
-        r.rotation.z += (toward * 0.1 - r.rotation.z) * k;
-
-        const handY = (this.form.height ?? 1.5) * 0.62 + (r.position.y - 0);
-        this.wand.position.set(toward * 0.32, handY - FLOOR_Y - r.position.y + FLOOR_Y, 0.25);
-        this.wand.position.y = handY;
-        const tipWorld = new Vector3(r.position.x + toward * 0.32, r.position.y + handY, 0.25);
-        this.wand.lookAt(this.pointWorld.x - r.position.x + this.wand.position.x, this.pointWorld.y - r.position.y, this.pointWorld.z);
-        this.wand.rotateX(Math.PI / 2);
-
-        // Spark stream: motes travelling a soft arc from tip to target.
-        const pos = this.wandSparks.geometry.getAttribute('position') as BufferAttribute;
-        const mid = tipWorld.clone().lerp(this.pointWorld, 0.5).add(new Vector3(0, 0.45, 0));
-        for (let i = 0; i < this.sparkSeeds.length; i++) {
-          const u = (this.sparkSeeds[i] + t * (0.35 + this.sparkSeeds[i] * 0.3)) % 1;
-          const a = tipWorld.clone().lerp(mid, u);
-          const b = mid.clone().lerp(this.pointWorld, u);
-          const p = a.lerp(b, u);
-          const jitter = 0.03 * Math.sin(t * 8 + i);
-          pos.setXYZ(i, p.x + jitter, p.y + jitter, p.z);
-        }
-        pos.needsUpdate = true;
-
-        this.pointHold -= dt;
-        if (this.pointHold <= 0) {
-          this.wand.visible = false;
-          this.wandSparks.visible = false;
-          if (this.needsLadder) this.enter('climbDown');
-          else {
-            if (this.returnAfterPoint) {
-              this.walkTargetX = this.anchorX;
-              this.pointHold = 0;
-              this.enter('walk');
-            } else this.enter('idle');
-          }
-        }
-        break;
-      }
-      case 'climbDown': {
-        const progress = Math.min(1, this.stateT / 0.8);
-        r.position.y = (1 - progress) * (this.climbTopY - FLOOR_Y);
-        if (progress >= 1) {
-          this.ladder.visible = false;
-          this.needsLadder = false;
-          this.walkTargetX = this.anchorX;
-          this.pointHold = 0;
-          this.enter('walk');
-        }
-        break;
-      }
-      case 'fall': {
-        // Knocked head over heels by the scroll wind.
-        this.fallSpin += dt * (6 + Math.min(this.scrollV, 60) * 0.12);
-        r.rotation.z = Math.sin(this.fallSpin) * 0.9;
-        r.rotation.y += dt * 2;
-        r.position.y = -0.18 + Math.sin(this.fallSpin * 0.5) * 0.1;
-        if (Math.abs(this.scrollV) < 8 && this.stateT > 0.35) this.enter('land');
-        break;
-      }
-      case 'land': {
-        // Squash, wobble, recover — dignity mostly intact.
-        const u = Math.min(1, this.stateT / 0.55);
-        const squash = Math.sin(u * Math.PI);
-        const b = this.stageScale;
-        r.scale.set(b * (1 + squash * 0.18), b * (1 - squash * 0.22), b * (1 + squash * 0.18));
-        r.position.y = 0;
-        r.rotation.z += (0 - r.rotation.z) * (1 - Math.exp(-dt * 8));
-        r.rotation.y += (0 - r.rotation.y) * (1 - Math.exp(-dt * 8));
-        if (u >= 1) {
-          r.scale.setScalar(b);
-          this.fallSpin = 0;
-          this.enter('idle');
-        }
-        break;
-      }
+    // Quiet aliveness: breath, a slow sway, the scroll lean.
+    if (this.model) {
+      this.model.rotation.z = Math.sin(t * 0.6) * 0.012 - this.lean;
+      this.model.rotation.y = Math.sin(t * 0.21) * 0.05;
+      this.model.position.y += (Math.sin(t * 1.3) * 0.008 * this.form.height - (this.model.userData.breath ?? 0));
+      this.model.userData.breath = Math.sin(t * 1.3) * 0.008 * this.form.height;
     }
 
     this.renderer.render(this.scene, this.camera);
@@ -448,9 +238,10 @@ export class CharacterScene {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    this.placeCorner();
   }
 
-  /** World half-width at the character plane, for anchor placement. */
+  /** World half-width at the character plane (kept for the director). */
   worldHalfWidth(): number {
     return Math.tan((this.camera.fov * Math.PI) / 360) * this.camera.position.z * this.camera.aspect;
   }

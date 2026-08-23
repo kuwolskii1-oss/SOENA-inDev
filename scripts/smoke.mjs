@@ -68,9 +68,9 @@ await page.locator('.orient-card', { hasText: 'Philosophical' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
 await page.getByRole('button', { name: 'meaning & purpose' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
-// Form step: pick the felted female (model CDN is blocked in this sandbox,
-// exercising the orb fallback).
-await page.getByRole('button', { name: 'her — the felted guide' }).click();
+// Form step: pick the tide-glass female (model CDN is blocked in this
+// sandbox, exercising the orb fallback).
+await page.getByRole('button', { name: 'her — the tide-glass listener' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
 await page.getByRole('button', { name: 'a little poetically' }).click();
 await page.getByRole('button', { name: 'Open the door' }).click();

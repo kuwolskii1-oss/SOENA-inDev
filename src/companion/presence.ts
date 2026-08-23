@@ -14,7 +14,7 @@
 import { on } from '../core/bus';
 import type { Quality } from '../core/quality';
 import { loadProfile } from '../core/profile';
-import { AVENUES, avenueById } from '../data/avenues';
+import { avenueById } from '../data/avenues';
 import { formById } from '../data/companion-config';
 import type { SoenaScene } from './scene';
 import type { CharacterScene } from './character';
@@ -88,33 +88,22 @@ async function mountPresence(quality: Quality): Promise<void> {
 }
 
 function wire(quality: Quality): void {
+  // The companion holds ONE post: the bottom-left corner, on every page.
+  // Pages only choose its size (the landing keeps it small); avenues only
+  // change its colour. The character pins itself; the orb is told once.
+  const scale = parseFloat(document.body.dataset.presenceScale ?? '1') || 1;
+  orb?.setAnchor(-0.88);
+  orb?.setStage(scale < 1 ? scale * 0.75 : 0.85);
+  character?.setStage(scale);
+
   const applyAvenue = (id: string) => {
     const avenue = avenueById(id);
     if (avenue) {
-      const idx = AVENUES.findIndex((a) => a.id === id);
-      const side = idx % 2 === 0 ? -1 : 1;
       orb?.setHues(avenue.hues[0], avenue.hues[1]);
       character?.setHues(avenue.hues[0], avenue.hues[1]);
-      const anchor = window.innerWidth < 720 ? 0 : side * 0.9;
-      orb?.setAnchor(anchor);
-      orb?.setStage(1);
-      character?.setAnchor(anchor * (character?.worldHalfWidth() ?? 2) * 0.52);
-      character?.setStage(1);
     } else {
-      // No avenue on screen: the garden greens, and the page decides the
-      // companion's post and size (the landing keeps a small corner avatar).
       orb?.setHues(150, 92);
       character?.setHues(150, 92);
-      const aside = parseFloat(document.body.dataset.presenceAnchor ?? '0') || 0;
-      const scale = parseFloat(document.body.dataset.presenceScale ?? '1') || 1;
-      orb?.setAnchor(window.innerWidth < 720 ? aside * 0.6 : aside * 1.55);
-      orb?.setStage(scale < 1 ? scale * 0.75 : 1);
-      character?.setAnchor(
-        window.innerWidth < 720
-          ? aside * (character?.worldHalfWidth() ?? 2) * 0.3
-          : aside * (character?.worldHalfWidth() ?? 2) * 0.82,
-      );
-      character?.setStage(scale);
     }
     if (quality.reducedMotion) still();
   };
