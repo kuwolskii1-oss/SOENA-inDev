@@ -54,6 +54,8 @@ export function buildNav(communitiesHref: string, items: DrawerItem[]): void {
     panel = document.createElement('aside');
     panel.className = 'drawer';
     panel.setAttribute('aria-label', 'All the ways through');
+    // Wheel inside the drawer must scroll the drawer, not the Lenis page.
+    panel.setAttribute('data-lenis-prevent', '');
     const head = document.createElement('div');
     head.className = 'drawer-head';
     const title = document.createElement('span');

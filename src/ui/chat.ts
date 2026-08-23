@@ -52,6 +52,8 @@ export function initChat(): void {
     drawer = document.createElement('aside');
     drawer.className = 'chat';
     drawer.setAttribute('aria-label', 'Conversation with SOENA');
+    // Wheel inside the chat must scroll its log, not the Lenis page.
+    drawer.setAttribute('data-lenis-prevent', '');
     drawer.innerHTML = `
       <header class="chat-head">
         <span>${iconSvg('message-circle')} SOENA</span>

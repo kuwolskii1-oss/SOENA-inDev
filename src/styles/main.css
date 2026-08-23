@@ -141,12 +141,18 @@ body {
   will-change: transform;
   user-select: none;
 }
+/* The halo takes only its hue from JS (--fig-h); brightness is themed
+   here so night can dim what daylight can carry. */
 .figure-glow {
   position: absolute;
   inset: -18%;
   z-index: -1;
   opacity: 0.55;
-  transition: opacity 0.8s linear, background 1.2s linear;
+  background: radial-gradient(closest-side, hsl(var(--fig-h, 150) 70% 62% / 0.3), transparent 75%);
+  transition: opacity 0.8s linear;
+}
+[data-theme='dark'] .figure-glow {
+  background: radial-gradient(closest-side, hsl(var(--fig-h, 150) 55% 42% / 0.2), transparent 75%);
 }
 
 main, header, footer { position: relative; z-index: 2; }
@@ -513,6 +519,9 @@ main, header, footer { position: relative; z-index: 2; }
   bottom: 2rem;
   transform: translate(-50%, 0.6rem);
   z-index: 9;
+  /* max-content sizing: with left:50%, shrink-to-fit would otherwise cap
+     the pill at 50vw on phones and stack it tall over the figure. */
+  width: max-content;
   max-width: min(38rem, 86vw);
   padding: 0.85rem 1.5rem;
   border-radius: 1.2rem;
@@ -870,6 +879,9 @@ select.threshold-input option { background: #f4f4f6; color: var(--ink); }
   .breath-circle { transition: none; }
   #gl { transition: none; }
   #aura { transition: none; }
+  #figure { transition: none; }
+  .figure-glow { transition: none; }
+  .soena-spotlight { animation: none; }
   * { scroll-behavior: auto !important; }
 }
 
@@ -1188,6 +1200,7 @@ html.arrival-done .hero-left > :nth-child(3) { transition-delay: 0.46s; }
 [data-theme='dark'] .drawer { background: rgba(5, 30, 24, 0.96); }
 [data-theme='dark'] select.threshold-input option { background: #0a2f27; color: var(--ink); }
 [data-theme='dark'] .switch-thumb { background: var(--mint); }
+[data-theme='dark'] #caption { background: rgba(6, 32, 26, 0.88); }
 
 /* One short breath where every surface may move together: added around
    the token flip, removed right after, so the interface dims as one. */

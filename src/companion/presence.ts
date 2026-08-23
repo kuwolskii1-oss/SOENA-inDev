@@ -25,6 +25,15 @@ let figure: FigurePresence | null = null;
 let currentQuality: Quality | null = null;
 let activeFormId = 'orb';
 
+/** Everything wire() registers, so teardown can actually unregister it —
+ *  otherwise every form swap would stack duplicate handlers and the
+ *  shared rAF would run each body's physics N times per frame. */
+let unwire: Array<() => void> = [];
+
+/** Mount generation: a swap that starts while an earlier mount is still
+ *  awaiting its sprite/chunk invalidates that older mount entirely. */
+let mountSeq = 0;
+
 export function initPresence(quality: Quality): void {
   currentQuality = quality;
 
@@ -46,6 +55,8 @@ export function initPresence(quality: Quality): void {
 }
 
 function teardown(): void {
+  for (const off of unwire) off();
+  unwire = [];
   orb?.dispose();
   figure?.dispose();
   orb = null;
@@ -54,21 +65,30 @@ function teardown(): void {
 }
 
 async function mountPresence(quality: Quality): Promise<void> {
+  const seq = ++mountSeq;
+  const stale = () => seq !== mountSeq;
   const form = formById(loadProfile()?.form);
   activeFormId = form.id;
 
   if (form.sprite) {
+    let f: FigurePresence | null = null;
     try {
       const { FigurePresence } = await import('./figure');
-      const f = new FigurePresence(form, quality.reducedMotion);
+      if (stale()) return;
+      f = new FigurePresence(form, quality.reducedMotion);
       await f.load();
+      if (stale()) {
+        f.dispose();
+        return;
+      }
       figure = f;
       wire(quality);
       if (quality.reducedMotion) f.renderStill();
       return;
     } catch {
-      figure?.dispose();
-      figure = null;
+      // Dispose the LOCAL instance: its root is in the DOM even though
+      // the module-level `figure` was never assigned.
+      f?.dispose();
       /* sprite unreachable: the light-orb steps in without complaint */
     }
   }
@@ -77,8 +97,8 @@ async function mountPresence(quality: Quality): Promise<void> {
   if (!canvas || !quality.webgl) return; // CSS aura carries the presence
   try {
     const { SoenaScene } = await import('./scene');
+    if (stale()) return;
     orb = new SoenaScene(canvas, quality);
-    activeFormId = form.sprite ? activeFormId : 'orb';
     canvas.classList.add('is-live');
     wire(quality);
     if (quality.reducedMotion) orb.renderStill();
@@ -107,41 +127,55 @@ function wire(quality: Quality): void {
     if (quality.reducedMotion) still();
   };
 
-  on('avenue:enter', ({ id }) => applyAvenue(id));
+  unwire.push(on('avenue:enter', ({ id }) => applyAvenue(id)));
 
   // The presence arrives late (idle-time): catch up with wherever the
   // visitor already scrolled to, instead of waking up in threshold hues.
   import('../core/scroll').then(({ currentAvenue }) => applyAvenue(currentAvenue()));
 
-  on('soena:mood', ({ mood }) => {
-    orb?.setMood(mood);
-    figure?.setMood(mood);
-  });
-  on('soena:pulse', ({ strength }) => {
-    orb?.addPulse(strength);
-    figure?.addPulse(strength);
-  });
-  on('scroll:progress', ({ velocity }) => {
-    orb?.setScrollVelocity(velocity);
-    figure?.setScrollVelocity(velocity);
-  });
-  on('pointer:move', ({ x, y }) => {
-    orb?.setPointer(x, y);
-    figure?.setPointer(x, y);
-  });
+  unwire.push(
+    on('soena:mood', ({ mood }) => {
+      orb?.setMood(mood);
+      figure?.setMood(mood);
+    }),
+  );
+  unwire.push(
+    on('soena:pulse', ({ strength }) => {
+      orb?.addPulse(strength);
+      figure?.addPulse(strength);
+    }),
+  );
+  unwire.push(
+    on('scroll:progress', ({ velocity }) => {
+      orb?.setScrollVelocity(velocity);
+      figure?.setScrollVelocity(velocity);
+    }),
+  );
+  unwire.push(
+    on('pointer:move', ({ x, y }) => {
+      orb?.setPointer(x, y);
+      figure?.setPointer(x, y);
+    }),
+  );
 
-  window.addEventListener('resize', () => {
+  const onResize = () => {
     orb?.resize();
     figure?.resize();
     if (quality.reducedMotion) still();
-  });
+  };
+  window.addEventListener('resize', onResize);
+  unwire.push(() => window.removeEventListener('resize', onResize));
 
   if (!quality.reducedMotion) {
+    // core/scroll is already loaded (startScroll ran at boot), so this
+    // resolves in a microtask — the disposer lands in the current bag.
     import('../core/scroll').then(({ onFrame }) => {
-      onFrame((t, dt) => {
-        orb?.render(t, dt);
-        figure?.render(t, dt);
-      });
+      unwire.push(
+        onFrame((t, dt) => {
+          orb?.render(t, dt);
+          figure?.render(t, dt);
+        }),
+      );
     });
   }
 }

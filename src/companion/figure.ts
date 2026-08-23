@@ -15,9 +15,17 @@
  */
 import type { CompanionForm } from '../data/companion-config';
 
-const HEAD_SCALE = 1.05;
-const MAX_NOD_DEG = 8;
-const MAX_TURN_DEG = 2.2;
+// The head layer covers the identical static head painted on the body
+// sprite. Its tangential travel at max rotation must stay inside the
+// extra coverage the scale-up buys, or a ghost band of the static head
+// peeks out: 6.8deg displaces a rim point by ~0.119r, and 1.09 buys
+// 0.09r — the ~0.03r remainder hides inside the 26px feathered edge.
+const HEAD_SCALE = 1.09;
+const MAX_NOD_DEG = 6;
+const MAX_TURN_DEG = 2;
+
+/** The figure may never claim more than this much of a narrow screen. */
+const MAX_WIDTH_FRACTION = 0.42;
 
 export class FigurePresence {
   private root: HTMLDivElement;
@@ -35,11 +43,14 @@ export class FigurePresence {
   private turn = 0;
   private stageScale = 1;
   private stageTarget = 1;
+  private staged = false;
+  private aspect: number;
   private disposed = false;
   private reduced: boolean;
 
   constructor(form: CompanionForm, reducedMotion: boolean) {
     this.reduced = reducedMotion;
+    this.aspect = form.aspect ?? 1;
     this.root = document.createElement('div');
     this.root.id = 'figure';
     this.root.setAttribute('aria-hidden', 'true');
@@ -96,12 +107,21 @@ export class FigurePresence {
 
   setStage(scale: number): void {
     this.stageTarget = scale;
-    if (this.reduced) this.applyStage(scale);
+    // The first stage call snaps: the figure must ARRIVE at its size,
+    // not shrink into it from the constructor's neutral 1 — and under
+    // reduced motion (no rAF to ease) the snap is the only path.
+    if (!this.staged || this.reduced) {
+      this.staged = true;
+      this.stageScale = scale;
+      this.applyStage(scale);
+    }
   }
 
   setHues(h1: number, h2: number): void {
     void h1;
-    this.glow.style.background = `radial-gradient(closest-side, hsl(${((h2 % 360) + 360) % 360} 70% 62% / 0.34), transparent 75%)`;
+    // Only the hue is written; the gradient (and its dark-theme
+    // brightness) lives in CSS so the night canopy can dim it.
+    this.glow.style.setProperty('--fig-h', String(((h2 % 360) + 360) % 360));
   }
 
   setPointer(x: number, y: number): void {
@@ -135,8 +155,12 @@ export class FigurePresence {
   /* ---------------- frame ------------------------------------------ */
 
   private applyStage(scale: number): void {
-    // Height as a viewport fraction; width follows the sprite's aspect.
-    this.root.style.height = `${Math.round(scale * 62 * 10) / 10}vh`;
+    // Height as a viewport fraction, capped so the figure never claims
+    // more than a corner of a narrow screen (her sprite is near-square,
+    // so unchecked height would mean ~2/3 of a phone's width).
+    const byHeight = scale * 0.62 * window.innerHeight;
+    const byWidth = (MAX_WIDTH_FRACTION * window.innerWidth) / this.aspect;
+    this.root.style.height = `${Math.round(Math.min(byHeight, byWidth))}px`;
   }
 
   render(t: number, dt: number): void {
@@ -145,8 +169,10 @@ export class FigurePresence {
     this.lean *= Math.exp(-dt * 2.2);
     this.lookHold = Math.max(0, this.lookHold - dt);
 
+    const prev = this.stageScale;
     this.stageScale += (this.stageTarget - this.stageScale) * (1 - Math.exp(-dt * 3));
-    this.applyStage(this.stageScale);
+    // Only touch layout while the size is actually changing.
+    if (Math.abs(this.stageScale - prev) > 0.0004) this.applyStage(this.stageScale);
 
     // The head follows the cursor — pitch first: high cursor, head up.
     const aim = this.lookHold > 0 ? this.lookNdc : this.pointer;
@@ -159,18 +185,26 @@ export class FigurePresence {
     }
 
     // Quiet aliveness: breath, a whisper of sway, the scroll lean.
-    const breath = Math.sin(t * 1.25) * 0.35;
-    const sway = Math.sin(t * 0.2) * 0.35;
+    const breath = Math.sin(t * 1.25) * 0.9;
+    const sway = Math.sin(t * 0.2) * 0.45;
     this.stage.style.transform = `translateY(${breath.toFixed(2)}%) rotate(${(sway - this.lean * 1.6).toFixed(2)}deg) scale(${(1 + this.pulse * 0.02).toFixed(3)})`;
     this.glow.style.opacity = String(0.55 + this.pulse * 0.45);
   }
 
+  /** Truly still: the resting pose at the correct size — no physics
+   *  step, so repeated event-driven calls can never creep the puppet. */
   renderStill(): void {
-    this.render(8, 0.016);
+    if (this.disposed) return;
+    this.stageScale = this.stageTarget;
+    this.applyStage(this.stageScale);
+    if (this.headEl) this.headEl.style.transform = `rotate(0deg) scale(${HEAD_SCALE})`;
+    this.stage.style.transform = 'none';
+    this.glow.style.opacity = '0.55';
   }
 
   resize(): void {
-    /* vh/aspect layout: nothing to do */
+    // Height is computed in px against the live viewport: reapply.
+    this.applyStage(this.stageScale);
   }
 
   dispose(): void {

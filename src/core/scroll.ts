@@ -19,8 +19,12 @@ let rafHandlers: Array<(t: number, dt: number) => void> = [];
 let running = false;
 let lastT = 0;
 
-export function onFrame(fn: (t: number, dt: number) => void): void {
+/** Register a per-frame callback; returns its unsubscriber. */
+export function onFrame(fn: (t: number, dt: number) => void): () => void {
   rafHandlers.push(fn);
+  return () => {
+    rafHandlers = rafHandlers.filter((f) => f !== fn);
+  };
 }
 
 function loop(time: number): void {
