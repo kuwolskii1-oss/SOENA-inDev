@@ -40,8 +40,8 @@
       /* Words hold the centre; the bottom-left corner belongs to SOENA. */
       .hero-left { max-width: 28rem; margin-inline: auto; }
       .hero-brand {
-        position: fixed; top: 1.05rem; left: 1.4rem; z-index: 11;
-        margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.01em;
+        position: fixed; top: 0.95rem; left: 1.4rem; z-index: 11;
+        margin: 0; font-size: 1.26rem; font-weight: 600; letter-spacing: 0.01em;
       }
       .hero-brand sup { font-size: 0.55em; }
       #hero-line {
@@ -55,7 +55,7 @@
     </style>
     <script type="module" src="/src/main.ts"></script>
   </head>
-  <body data-presence-anchor="-0.92" data-presence-scale="0.72">
+  <body data-presence-anchor="-0.92" data-presence-scale="0.36">
     <div id="aura" aria-hidden="true"></div>
     <canvas id="gl" aria-hidden="true"></canvas>
 
@@ -65,7 +65,6 @@
       <a class="skip-link" href="#hero-chips">Skip to the choices</a>
       <nav id="ways" aria-label="Avenues"></nav>
       <div class="head-actions">
-        <button id="chat-open" type="button" title="Talk with SOENA">let’s talk</button>
         <button id="voice-toggle" type="button" aria-pressed="false" title="Let SOENA speak aloud">voice</button>
         <button id="memory-open" type="button" title="What SOENA remembers">memory</button>
       </div>

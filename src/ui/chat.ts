@@ -36,10 +36,14 @@ function saveHistory(msgs: ChatMessage[]): void {
   }
 }
 
-export function initChat(): void {
-  const openBtn = document.getElementById('chat-open');
-  if (!openBtn) return;
+let toggleImpl: (() => void) | null = null;
 
+/** Open or close the conversation from anywhere (chips, SOENA herself). */
+export function toggleChat(): void {
+  toggleImpl?.();
+}
+
+export function initChat(): void {
   let drawer: HTMLElement | null = null;
   let messages = loadHistory();
 
@@ -157,8 +161,9 @@ export function initChat(): void {
     emit('soena:mood', { mood: 'idle' });
   };
 
-  openBtn.addEventListener('click', () => {
+  toggleImpl = () => {
     if (drawer) close();
     else build();
-  });
+  };
+  document.getElementById('chat-open')?.addEventListener('click', toggleImpl);
 }

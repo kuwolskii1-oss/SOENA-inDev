@@ -104,7 +104,7 @@ main, header, footer { position: relative; z-index: 2; }
 #site-head .brand {
   font-family: var(--serif);
   letter-spacing: 0.28em;
-  font-size: 0.9rem;
+  font-size: 1.08rem;
   color: var(--ink-dim);
 }
 
@@ -779,6 +779,103 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
 
+
+/* ---------------------------------------------------------------
+   Nav drawer + voice switch
+   --------------------------------------------------------------- */
+
+.nav-drawer-btn {
+  font: inherit;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  color: var(--ink-faint);
+  background: none;
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 0.35rem 0;
+  cursor: pointer;
+  transition: color 0.4s, border-color 0.4s;
+}
+.nav-drawer-btn:hover, .nav-drawer-btn:focus-visible { color: var(--ink); }
+.nav-drawer-btn[aria-expanded='true'] { color: var(--ink); border-color: var(--accent); }
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  width: min(20rem, 84vw);
+  background: rgba(251, 255, 249, 0.96);
+  backdrop-filter: blur(14px);
+  border-left: 1px solid var(--veil);
+  padding: 1.2rem 1.6rem 2rem;
+  transform: translateX(100%);
+  transition: transform 0.45s var(--ease);
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  overflow-y: auto;
+}
+.drawer.is-open { transform: none; }
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--serif);
+  letter-spacing: 0.16em;
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+}
+.drawer-head .btn { font-size: 0.72rem; padding: 0.3rem 0.8rem; }
+
+.drawer-list { display: grid; gap: 0.15rem; }
+.drawer-list a {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--veil);
+  transition: color 0.3s, padding-left 0.3s;
+}
+.drawer-list a:hover, .drawer-list a:focus-visible { color: var(--accent); padding-left: 0.4rem; }
+
+/* Voice switch */
+.head-actions button.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: none;
+  padding: 0.38rem 0.2rem;
+}
+.switch-track {
+  width: 2.1rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  background: var(--veil);
+  position: relative;
+  transition: background 0.3s;
+  flex: none;
+}
+.switch-thumb {
+  position: absolute;
+  top: 0.14rem;
+  left: 0.16rem;
+  width: 0.87rem;
+  height: 0.87rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(4, 35, 28, 0.3);
+  transition: transform 0.3s var(--ease);
+}
+.head-actions button.switch.is-on .switch-track { background: var(--accent); }
+.head-actions button.switch.is-on .switch-thumb { transform: translateX(0.9rem); }
+.head-actions button.switch:hover:not(:disabled) .switch-track { background: var(--veil-strong); }
+.head-actions button.switch.is-on:hover:not(:disabled) .switch-track { background: var(--accent-teal); }
 
 /* ---------------------------------------------------------------
    Landing (the door): one screen, no scrolling — SOENA keeps a small

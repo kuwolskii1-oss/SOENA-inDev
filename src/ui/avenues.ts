@@ -24,16 +24,9 @@ const SEED_VOICES: Array<{ path: string; text: string }> = [
 
 export function renderAvenues(): void {
   const main = document.getElementById('app');
-  const nav = document.getElementById('ways');
-  if (!main || !nav) return;
+  if (!main) return;
 
   AVENUES.forEach((avenue, index) => {
-    // Nav link
-    const link = document.createElement('a');
-    link.href = `#${avenue.id}`;
-    link.textContent = avenue.title;
-    nav.appendChild(link);
-
     // Section
     const section = document.createElement('section');
     // Text sits opposite the companion: orb left on even avenues → text right.
