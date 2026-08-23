@@ -37,10 +37,57 @@
       }
       #reach-hero p { margin: 0 auto; max-width: 40ch; color: rgba(23,23,27,.64); line-height: 1.6; }
       noscript p { color: rgba(23,23,27,.85); max-width: 40ch; margin: 2rem auto; text-align: center; }
+      /* Brief arrival curtain — same door as the landing, half the
+         ceremony: the wordmark sits quietly, the light-line stretches,
+         the veil lifts as soon as the type is ready. */
+      #arrival {
+        position: fixed; inset: 0; z-index: 120;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+        background: #04231c;
+      }
+      .has-arrival #arrival { display: flex; }
+      html.has-arrival:not(.arrival-done) { overflow: hidden; }
+      .arrival-word {
+        margin: 0; color: #fbfff9;
+        font-family: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+        font-weight: 480; letter-spacing: 0.32em; text-indent: 0.32em;
+      }
+      #arrival.arrival--brief .arrival-word { font-size: clamp(1.3rem, 3.4vw, 1.8rem); }
+      #arrival.arrival--brief .arrival-word span { display: inline-block; }
+      .arrival-line {
+        width: min(7rem, 26vw); height: 2px; margin-top: 1.15rem;
+        background: #c7f454; border-radius: 2px;
+        box-shadow: 0 0 18px rgba(199, 244, 84, 0.55);
+        transform: scaleX(0);
+        transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.05s;
+      }
+      #arrival.is-lit .arrival-line { transform: scaleX(1); }
+      html.arrival-done #arrival {
+        transform: translateY(-101%); pointer-events: none;
+        transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .arrival-line { transition-duration: 0.01s; }
+        html.arrival-done #arrival {
+          transform: none; opacity: 0; visibility: hidden;
+          transition: opacity 0.25s linear, visibility 0s linear 0.25s;
+        }
+      }
     </style>
+    <script>
+      // Veil only when JS runs; failsafe lift at 4s if the app never boots.
+      document.documentElement.classList.add('has-arrival');
+      window.__soenaArrival = setTimeout(function () {
+        document.documentElement.classList.add('arrival-done');
+      }, 4000);
+    </script>
     <script type="module" src="/src/contact.ts"></script>
   </head>
   <body data-presence-anchor="-0.95">
+    <div id="arrival" class="arrival--brief" aria-hidden="true">
+      <p class="arrival-word"><span>S</span><span>O</span><span>E</span><span>N</span><span>A</span></p>
+      <span class="arrival-line"></span>
+    </div>
     <div id="aura" aria-hidden="true"></div>
     <canvas id="gl" aria-hidden="true"></canvas>
 

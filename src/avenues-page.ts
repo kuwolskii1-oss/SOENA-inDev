@@ -14,6 +14,7 @@ import { detectQuality } from './core/quality';
 import { observeSections, startScroll } from './core/scroll';
 import { initPresence } from './companion/presence';
 import { say, speakAvenue } from './companion/dialogue';
+import { beginArrival } from './ui/arrival';
 import { renderAvenues } from './ui/avenues';
 import { initHeaderControls } from './ui/header';
 import { initChat } from './ui/chat';
@@ -23,6 +24,10 @@ import { AVENUES, avenueById } from './data/avenues';
 const quality = detectQuality();
 document.documentElement.dataset.tier = String(quality.tier);
 if (quality.reducedMotion) document.documentElement.dataset.motion = 'reduced';
+
+/* Inner page: the brief curtain — enough to cover the settling, never
+   enough to make moving around the site feel gated. */
+const arrival = beginArrival('brief');
 
 renderAvenues();
 buildNav('#community', [
@@ -71,12 +76,14 @@ window.addEventListener(
   { passive: true },
 );
 
-window.setTimeout(() => {
-  const p = loadProfile();
-  say(
-    p
-      ? 'The avenues, {name}. Any order, any pace — I will keep alongside.'
-      : 'The avenues. Walk them in any order — I will keep alongside.',
-    'guiding',
-  );
-}, 1100);
+arrival.then(() => {
+  window.setTimeout(() => {
+    const p = loadProfile();
+    say(
+      p
+        ? 'The avenues, {name}. Any order, any pace — I will keep alongside.'
+        : 'The avenues. Walk them in any order — I will keep alongside.',
+      'guiding',
+    );
+  }, 800);
+});

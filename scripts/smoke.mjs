@@ -35,10 +35,26 @@ page.on('console', (m) => {
 });
 page.on('pageerror', (e) => errors.push(String(e)));
 
+// Wait for the arrival veil to lift (html.arrival-done is set as the
+// lift begins; the node itself is removed ~1s later).
+const arrived = () =>
+  page.waitForFunction(() => document.documentElement.classList.contains('arrival-done'), null, {
+    timeout: 9000,
+  });
+
 await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
-await page.waitForTimeout(1500);
 
 const results = {};
+// The arrival veil must be up right after load (min hold ~1.25s)…
+results.arrivalVisibleAtLoad = await page.locator('#arrival').isVisible();
+results.arrivalLetters = await page.locator('#arrival .arrival-word span').count();
+await arrived();
+await page.waitForTimeout(1900);
+// …and fully gone once the door has opened, with the hero revealed.
+results.arrivalGone = (await page.locator('#arrival').count()) === 0;
+results.heroRevealed = await page.evaluate(
+  () => getComputedStyle(document.getElementById('hero-line')).opacity,
+);
 results.title = await page.title();
 results.onboardingVisible = await page.locator('.threshold-panel').isVisible();
 
@@ -122,9 +138,14 @@ await page.waitForTimeout(900);
 results.appliedName = await page.evaluate(() => JSON.parse(localStorage.getItem('soena.profile.v1')).name);
 await page.screenshot({ path: 'scripts/.shots/shot-memory.png' });
 
-// Avenues live on their own page; navigation goes through the drawer
+// Avenues live on their own page; navigation goes through the drawer.
+// Inner pages open behind the brief arrival curtain.
 await page.goto('http://localhost:4173/avenues.html', { waitUntil: 'networkidle' });
-await page.waitForTimeout(1400);
+await arrived();
+await page.waitForTimeout(1200);
+results.arrivalOnInnerPages = await page.evaluate(() =>
+  document.documentElement.classList.contains('has-arrival'),
+);
 results.navItems = await page.locator('#ways > *').count(); // communities + drawer
 results.avenueEmblems = await page.locator('.avenue-emblem').count();
 await page.locator('#drawer-open').click();
@@ -169,15 +190,18 @@ await page.getByRole('button', { name: 'Keep these words' }).click();
 await page.waitForTimeout(700);
 results.journalEntries = await page.locator('.journal-entry').count();
 
-// Back to the landing: returning-visitor greeting (typed into the hero line)
+// Back to the landing: returning-visitor greeting (typed into the hero
+// line). Every hard load — refresh included — passes the full arrival.
 await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
-await page.waitForTimeout(4600);
+await arrived();
+await page.waitForTimeout(4200);
 results.returningOnboardingShown = await page.locator('.threshold-panel').count();
 results.returningGreeting = await page.locator('#hero-line').textContent();
 
 // The reaching place (contact page): conversation -> folded letter
 await page.goto('http://localhost:4173/contact.html', { waitUntil: 'networkidle' });
-await page.waitForTimeout(1400);
+await arrived();
+await page.waitForTimeout(1200);
 results.reachHero = await page.locator('#reach-hero h1').textContent();
 await page.getByRole('button', { name: 'I want to walk with SOENA' }).click();
 await page.waitForTimeout(500);
