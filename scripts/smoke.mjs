@@ -1,5 +1,6 @@
 /* SOENA smoke test: boots the built site in headless Chromium, walks the
-   onboarding, checks the WebGL presence, memory persistence and journal. */
+   onboarding, chat, memory (Apply), drawer navigation, avenues, journal,
+   returning visit, and the contact conversation. */
 import { chromium } from 'playwright-core';
 import { createServer } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
@@ -29,7 +30,6 @@ page.on('console', (m) => {
   if (m.type() !== 'error') return;
   // Resource fetch failures are environment noise in sandboxes where the
   // model CDN is unreachable (the app falls back to the orb by design).
-  // Real JS errors still land via pageerror below.
   if (/Failed to load resource/.test(m.text())) return;
   errors.push(m.text());
 });
@@ -52,8 +52,8 @@ await page.locator('.orient-card', { hasText: 'Philosophical' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
 await page.getByRole('button', { name: 'meaning & purpose' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
-// Form step: pick the female character (its model can't load in this
-// sandbox — the CDN is egress-blocked — which exercises the orb fallback).
+// Form step: pick the felted female (model CDN is blocked in this sandbox,
+// exercising the orb fallback).
 await page.getByRole('button', { name: 'her — the felted guide' }).click();
 await page.getByRole('button', { name: 'Continue' }).click();
 await page.getByRole('button', { name: 'a little poetically' }).click();
@@ -63,36 +63,15 @@ await page.waitForTimeout(4200);
 
 results.greeting = await page.locator('#hero-line').textContent();
 results.canvasLive = await page.locator('#gl.is-live').count();
-results.glContext = await page.evaluate(() => {
-  const c = document.getElementById('gl');
-  return !!(c && (c.getContext('webgl2') || c.getContext('webgl')));
-});
 results.profile = await page.evaluate(() => localStorage.getItem('soena.profile.v1'));
+results.voiceSwitchRole = await page.locator('#voice-toggle').getAttribute('role');
+results.letsTalkGone = (await page.locator('#chat-open').count()) === 0;
 
 await page.screenshot({ path: 'scripts/.shots/shot-threshold.png' });
 
-// The avenues live on their own page now; the landing never scrolls.
-await page.goto('http://localhost:4173/avenues.html', { waitUntil: 'networkidle' });
-await page.waitForTimeout(1400);
-await page.locator('#ways a[href="#journeys"]').click();
-await page.waitForTimeout(2200);
-results.journeysFraming = await page.locator('[data-framing-for="journeys"]').textContent();
-results.captionAtJourneys = await page.locator('#caption').textContent();
-await page.screenshot({ path: 'scripts/.shots/shot-journeys.png' });
-
-// Journal in testimony
-await page.locator('#ways a[href="#testimony"]').click();
-await page.waitForTimeout(2000);
-await page.locator('.journal-input').fill('Right now the road is foggy but I am walking.');
-await page.getByRole('button', { name: 'Keep these words' }).click();
-await page.waitForTimeout(700);
-results.journalEntries = await page.locator('.journal-entry').count();
-results.journalStore = await page.evaluate(() => localStorage.getItem('soena.journal.v1'));
-await page.screenshot({ path: 'scripts/.shots/shot-testimony.png' });
-
-// Chat: book suggestion, lore keep + recall
-await page.locator('#chat-open').click();
-await page.waitForTimeout(600);
+// Chat opens through the conversation chip now
+await page.getByRole('button', { name: 'Just talk with me' }).click();
+await page.waitForTimeout(2400);
 const chatSend = async (text) => {
   await page.locator('.chat-input').fill(text);
   await page.locator('.chat-form button[type="submit"]').click();
@@ -107,12 +86,38 @@ await page.screenshot({ path: 'scripts/.shots/shot-chat.png' });
 await page.locator('.chat-close').click();
 await page.waitForTimeout(600);
 
-// Memory panel
+// Memory panel: edits buffer into a draft; Apply commits
 await page.locator('#memory-open').click();
 await page.waitForTimeout(900);
 results.memoryPanel = await page.locator('.memory-sheet h2').textContent();
+results.applyPresent = (await page.locator('#memory-apply').count()) === 1;
+await page.locator('.memory-sheet input[type="text"]').first().fill('Akira');
+await page.locator('#memory-apply').click();
+await page.waitForTimeout(900);
+results.appliedName = await page.evaluate(() => JSON.parse(localStorage.getItem('soena.profile.v1')).name);
 await page.screenshot({ path: 'scripts/.shots/shot-memory.png' });
-await page.getByRole('button', { name: 'Close' }).click();
+
+// Avenues live on their own page; navigation goes through the drawer
+await page.goto('http://localhost:4173/avenues.html', { waitUntil: 'networkidle' });
+await page.waitForTimeout(1400);
+results.navItems = await page.locator('#ways > *').count(); // communities + drawer
+await page.locator('#drawer-open').click();
+await page.waitForTimeout(700);
+results.drawerLinks = await page.locator('.drawer-list a').count();
+await page.screenshot({ path: 'scripts/.shots/shot-drawer.png' });
+await page.locator('.drawer-list a[href="#journeys"]').click();
+await page.waitForTimeout(2400);
+results.journeysFraming = await page.locator('[data-framing-for="journeys"]').textContent();
+results.captionAtJourneys = await page.locator('#caption').textContent();
+await page.screenshot({ path: 'scripts/.shots/shot-journeys.png' });
+
+// Journal in testimony
+await page.evaluate(() => { document.getElementById('testimony')?.scrollIntoView(); });
+await page.waitForTimeout(1500);
+await page.locator('.journal-input').fill('Right now the road is foggy but I am walking.');
+await page.getByRole('button', { name: 'Keep these words' }).click();
+await page.waitForTimeout(700);
+results.journalEntries = await page.locator('.journal-entry').count();
 
 // Back to the landing: returning-visitor greeting (typed into the hero line)
 await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' });

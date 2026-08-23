@@ -9,7 +9,6 @@
  */
 import {
   AdditiveBlending,
-  AnimationMixer,
   Bone,
   Box3,
   BoxGeometry,
@@ -46,7 +45,6 @@ export class CharacterScene {
 
   private rig = new Group(); // moves around the page
   private model: Group | null = null;
-  private mixer: AnimationMixer | null = null;
 
   // Gaze: the head bone follows the visitor's cursor — the single
   // strongest "someone is here with you" signal a character can give.
@@ -137,10 +135,9 @@ export class CharacterScene {
         this.model.position.x = -(scaled.min.x + scaled.max.x) / 2;
         this.rig.add(this.model);
 
-        if (gltf.animations.length) {
-          this.mixer = new AnimationMixer(this.model);
-          this.mixer.clipAction(gltf.animations[0]).play();
-        }
+        // The baked idle clip is deliberately NOT played — the canned loop
+        // reads wrong. The companion's aliveness comes from the procedural
+        // layer instead: breathing bob, slow sway, and cursor gaze.
 
         // Find the head (or failing that the neck) in the auto-rig so the
         // companion can meet the visitor's cursor with its gaze.
@@ -301,16 +298,16 @@ export class CharacterScene {
     this.tint.lerp(this.tintTarget, k);
     this.hemi.color.copy(this.tint);
     this.pulse *= Math.exp(-dt * 4);
-    this.mixer?.update(dt);
 
-    // Gaze tracking, applied AFTER the mixer so it layers over the idle
-    // clip: the head turns to meet the cursor, damped like real attention.
+    // Gaze tracking: with no clip running the bone pose persists, so the
+    // offset is applied as an absolute target each frame, damped like
+    // real attention.
     if (this.headBone) {
       const gk = 1 - Math.exp(-dt * 5);
       this.gazeYaw += (this.pointer.x * 0.55 - this.gazeYaw) * gk;
       this.gazePitch += (-this.pointer.y * 0.32 - this.gazePitch) * gk;
-      this.headBone.rotation.y += this.gazeYaw;
-      this.headBone.rotation.x += this.gazePitch;
+      this.headBone.rotation.y = this.gazeYaw;
+      this.headBone.rotation.x = this.gazePitch;
     }
 
     this.camera.position.y += (0 - this.camera.position.y) * (1 - Math.exp(-dt * 2.2));

@@ -1,11 +1,14 @@
 /**
- * The memory door: a full, honest view of everything SOENA holds, all of it
- * editable and erasable. Trust in a companion that remembers you begins
- * with being able to see exactly what it remembers.
+ * The memory door: a full, honest view of everything SOENA holds.
+ *
+ * Edits collect in a draft and commit only when the person presses
+ * Apply — Cancel walks away leaving memory untouched. Trust in a
+ * companion that remembers you begins with control over the remembering.
  */
 import {
   INTENTIONS,
   PRONOUN_PRESETS,
+  type Profile,
   eraseAllMemory,
   loadProfile,
   saveProfile,
@@ -13,7 +16,7 @@ import {
 import { ORIENTATIONS } from '../data/orientations';
 import { COMPANION_FORMS } from '../data/companion-config';
 import { loadJournal } from './journal';
-import { speakErased, speakMemoryOpened } from '../companion/dialogue';
+import { say, speakErased, speakMemoryOpened } from '../companion/dialogue';
 
 export function openMemoryPanel(): void {
   const root = document.getElementById('overlay-root');
@@ -45,11 +48,19 @@ export function openMemoryPanel(): void {
     actions.appendChild(button('Close', 'primary', close));
     panel.appendChild(actions);
   } else {
+    // All edits land here; nothing touches real memory until Apply.
+    const draft: Profile = {
+      ...p,
+      pronouns: p.pronouns,
+      intentions: [...p.intentions],
+      keepsakes: [...p.keepsakes],
+    };
+
     const journalCount = loadJournal().length;
     panel.innerHTML = `
       <h2 tabindex="-1">What I remember</h2>
       <p class="memory-note">All of this lives in this browser's local storage — nowhere else.
-      Change anything; I will speak accordingly.</p>`;
+      Change anything, then press Apply; Cancel leaves my memory as it was.</p>`;
 
     // Name
     panel.appendChild(field('Your name', () => {
@@ -57,10 +68,9 @@ export function openMemoryPanel(): void {
       input.className = 'threshold-input';
       input.type = 'text';
       input.maxLength = 40;
-      input.value = p.name;
-      input.addEventListener('change', () => {
-        p.name = input.value.trim() || 'traveller';
-        saveProfile(p);
+      input.value = draft.name;
+      input.addEventListener('input', () => {
+        draft.name = input.value.trim() || 'traveller';
       });
       return input;
     }));
@@ -70,8 +80,8 @@ export function openMemoryPanel(): void {
       const select = document.createElement('select');
       select.className = 'threshold-input';
       const opts = [...PRONOUN_PRESETS.map((s) => s.label), 'just my name'];
-      const current = p.pronouns?.label ?? 'just my name';
-      if (p.pronouns && !opts.includes(p.pronouns.label)) opts.unshift(p.pronouns.label);
+      const current = draft.pronouns?.label ?? 'just my name';
+      if (draft.pronouns && !opts.includes(draft.pronouns.label)) opts.unshift(draft.pronouns.label);
       for (const label of opts) {
         const o = document.createElement('option');
         o.value = label;
@@ -80,11 +90,10 @@ export function openMemoryPanel(): void {
         select.appendChild(o);
       }
       select.addEventListener('change', () => {
-        p.pronouns =
+        draft.pronouns =
           select.value === 'just my name'
             ? null
-            : PRONOUN_PRESETS.find((s) => s.label === select.value) ?? p.pronouns;
-        saveProfile(p);
+            : PRONOUN_PRESETS.find((s) => s.label === select.value) ?? draft.pronouns;
       });
       return select;
     }));
@@ -97,12 +106,11 @@ export function openMemoryPanel(): void {
         const opt = document.createElement('option');
         opt.value = f.id;
         opt.textContent = f.label;
-        opt.selected = f.id === (p.form ?? 'orb');
+        opt.selected = f.id === (draft.form ?? 'orb');
         select.appendChild(opt);
       }
       select.addEventListener('change', () => {
-        p.form = select.value;
-        saveProfile(p);
+        draft.form = select.value;
       });
       return select;
     }));
@@ -115,12 +123,11 @@ export function openMemoryPanel(): void {
         const opt = document.createElement('option');
         opt.value = o.id;
         opt.textContent = o.label;
-        opt.selected = o.id === p.orientation;
+        opt.selected = o.id === draft.orientation;
         select.appendChild(opt);
       }
       select.addEventListener('change', () => {
-        p.orientation = select.value;
-        saveProfile(p);
+        draft.orientation = select.value;
       });
       return select;
     }));
@@ -131,13 +138,12 @@ export function openMemoryPanel(): void {
       wrap.className = 'chips';
       for (const it of INTENTIONS) {
         const b = button(it.label, 'chip', () => {
-          const i = p.intentions.indexOf(it.id);
-          if (i >= 0) p.intentions.splice(i, 1);
-          else p.intentions.push(it.id);
+          const i = draft.intentions.indexOf(it.id);
+          if (i >= 0) draft.intentions.splice(i, 1);
+          else draft.intentions.push(it.id);
           b.setAttribute('aria-pressed', String(i < 0));
-          saveProfile(p);
         });
-        b.setAttribute('aria-pressed', String(p.intentions.includes(it.id)));
+        b.setAttribute('aria-pressed', String(draft.intentions.includes(it.id)));
         wrap.appendChild(b);
       }
       return wrap;
@@ -150,13 +156,12 @@ export function openMemoryPanel(): void {
       list.className = 'keepsakes';
       const renderList = () => {
         list.replaceChildren(
-          ...p.keepsakes.map((k, i) => {
+          ...draft.keepsakes.map((k, i) => {
             const li = document.createElement('li');
             const span = document.createElement('span');
             span.textContent = k;
             const del = button('release', 'ghost', () => {
-              p.keepsakes.splice(i, 1);
-              saveProfile(p);
+              draft.keepsakes.splice(i, 1);
               renderList();
             });
             li.append(span, del);
@@ -175,9 +180,8 @@ export function openMemoryPanel(): void {
       const add = button('keep', 'primary', () => {
         const v = input.value.trim();
         if (!v) return;
-        p.keepsakes.push(v);
+        draft.keepsakes.push(v);
         input.value = '';
-        saveProfile(p);
         renderList();
       });
       row.append(input, add);
@@ -193,6 +197,17 @@ export function openMemoryPanel(): void {
 
     const actions = document.createElement('div');
     actions.className = 'threshold-actions';
+
+    const apply = button('Apply', 'primary', () => {
+      Object.assign(p, draft);
+      saveProfile(p);
+      say('Applied. I will speak accordingly, {name}.', 'guiding');
+      close();
+    });
+    apply.id = 'memory-apply';
+
+    const cancel = button('Cancel', 'ghost', close);
+
     const erase = button('Erase everything I know', 'danger', () => {
       if (erase.dataset.confirm !== '1') {
         erase.dataset.confirm = '1';
@@ -203,7 +218,8 @@ export function openMemoryPanel(): void {
       speakErased();
       close();
     });
-    actions.append(button('Close', 'primary', close), erase);
+
+    actions.append(apply, cancel, erase);
     panel.appendChild(actions);
   }
 

@@ -15,7 +15,8 @@ import { initPresence, pointAtSelector } from './companion/presence';
 import { greet, say, speakIntention } from './companion/dialogue';
 import { runOnboarding } from './ui/onboarding';
 import { initHeaderControls } from './ui/header';
-import { initChat } from './ui/chat';
+import { initChat, toggleChat } from './ui/chat';
+import { buildNav } from './ui/drawer';
 import { AVENUES, avenueById } from './data/avenues';
 
 const quality = detectQuality();
@@ -24,22 +25,11 @@ if (quality.reducedMotion) document.documentElement.dataset.motion = 'reduced';
 
 document.body.classList.add('landing');
 
-/* Nav: the avenues live on their own page now. */
-const ways = document.getElementById('ways');
-if (ways) {
-  for (const avenue of AVENUES) {
-    const a = document.createElement('a');
-    a.href = `./avenues.html#${avenue.id}`;
-    a.textContent = avenue.title;
-    a.className = 'external-page-link';
-    ways.appendChild(a);
-  }
-  const reach = document.createElement('a');
-  reach.href = './contact.html';
-  reach.textContent = 'reach out';
-  reach.className = 'external-page-link';
-  ways.appendChild(reach);
-}
+/* Nav: two words — communities, and the drawer that holds the rest. */
+buildNav('./avenues.html#community', [
+  ...AVENUES.map((a) => ({ label: a.title.toLowerCase(), href: `./avenues.html#${a.id}` })),
+  { label: 'reach out', href: './contact.html' },
+]);
 document.getElementById('site-head')?.removeAttribute('hidden');
 
 initHeaderControls();
@@ -69,7 +59,7 @@ if (chips) {
     chip('Walk the avenues', 'external-page-link', replyThen('Then walk with me — the avenues are just through here.', () => {
       window.location.href = './avenues.html';
     })),
-    chip('Just talk with me', '', replyThen('Good. No agenda, no map — just company.', () => document.getElementById('chat-open')?.click(), 1100)),
+    chip('Just talk with me', '', replyThen('Good. No agenda, no map — just company.', () => toggleChat(), 1100)),
     chip('Share a testimony', 'external-page-link', replyThen('I keep a page for exactly that — your words stay on your own device.', () => {
       window.location.href = './avenues.html#testimony';
     })),

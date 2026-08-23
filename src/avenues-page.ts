@@ -17,13 +17,18 @@ import { say, speakAvenue } from './companion/dialogue';
 import { renderAvenues } from './ui/avenues';
 import { initHeaderControls } from './ui/header';
 import { initChat } from './ui/chat';
-import { avenueById } from './data/avenues';
+import { buildNav } from './ui/drawer';
+import { AVENUES, avenueById } from './data/avenues';
 
 const quality = detectQuality();
 document.documentElement.dataset.tier = String(quality.tier);
 if (quality.reducedMotion) document.documentElement.dataset.motion = 'reduced';
 
 renderAvenues();
+buildNav('#community', [
+  ...AVENUES.map((a) => ({ label: a.title.toLowerCase(), href: `#${a.id}` })),
+  { label: 'reach out', href: './contact.html' },
+]);
 document.getElementById('site-head')?.removeAttribute('hidden');
 
 initHeaderControls();
