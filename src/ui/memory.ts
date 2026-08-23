@@ -17,6 +17,7 @@ import { ORIENTATIONS } from '../data/orientations';
 import { COMPANION_FORMS } from '../data/companion-config';
 import { loadJournal } from './journal';
 import { say, speakErased, speakMemoryOpened } from '../companion/dialogue';
+import { prefixIcon, type IconName } from './icons';
 
 export function openMemoryPanel(): void {
   const root = document.getElementById('overlay-root');
@@ -45,7 +46,7 @@ export function openMemoryPanel(): void {
       Both are welcome.</p>`;
     const actions = document.createElement('div');
     actions.className = 'threshold-actions';
-    actions.appendChild(button('Close', 'primary', close));
+    actions.appendChild(button('Close', 'primary', close, 'x'));
     panel.appendChild(actions);
   } else {
     // All edits land here; nothing touches real memory until Apply.
@@ -63,7 +64,7 @@ export function openMemoryPanel(): void {
       Change anything, then press Apply; Cancel leaves my memory as it was.</p>`;
 
     // Name
-    panel.appendChild(field('Your name', () => {
+    panel.appendChild(field('Your name', 'user', () => {
       const input = document.createElement('input');
       input.className = 'threshold-input';
       input.type = 'text';
@@ -76,7 +77,7 @@ export function openMemoryPanel(): void {
     }));
 
     // Pronouns
-    panel.appendChild(field('Your pronouns', () => {
+    panel.appendChild(field('Your pronouns', 'message-circle', () => {
       const select = document.createElement('select');
       select.className = 'threshold-input';
       const opts = [...PRONOUN_PRESETS.map((s) => s.label), 'just my name'];
@@ -99,7 +100,7 @@ export function openMemoryPanel(): void {
     }));
 
     // Form
-    panel.appendChild(field('The shape I wear', () => {
+    panel.appendChild(field('The shape I wear', 'sparkles', () => {
       const select = document.createElement('select');
       select.className = 'threshold-input';
       for (const f of COMPANION_FORMS) {
@@ -116,7 +117,7 @@ export function openMemoryPanel(): void {
     }));
 
     // Orientation
-    panel.appendChild(field('The lean of your path', () => {
+    panel.appendChild(field('The lean of your path', 'compass', () => {
       const select = document.createElement('select');
       select.className = 'threshold-input';
       for (const o of ORIENTATIONS) {
@@ -133,7 +134,7 @@ export function openMemoryPanel(): void {
     }));
 
     // Intentions
-    panel.appendChild(field('What you came seeking', () => {
+    panel.appendChild(field('What you came seeking', 'target', () => {
       const wrap = document.createElement('div');
       wrap.className = 'chips';
       for (const it of INTENTIONS) {
@@ -150,7 +151,7 @@ export function openMemoryPanel(): void {
     }));
 
     // Keepsakes
-    panel.appendChild(field('Keepsakes — things you asked me to hold', () => {
+    panel.appendChild(field('Keepsakes — things you asked me to hold', 'gem', () => {
       const wrap = document.createElement('div');
       const list = document.createElement('ul');
       list.className = 'keepsakes';
@@ -163,7 +164,7 @@ export function openMemoryPanel(): void {
             const del = button('release', 'ghost', () => {
               draft.keepsakes.splice(i, 1);
               renderList();
-            });
+            }, 'x');
             li.append(span, del);
             return li;
           }),
@@ -183,7 +184,7 @@ export function openMemoryPanel(): void {
         draft.keepsakes.push(v);
         input.value = '';
         renderList();
-      });
+      }, 'plus');
       row.append(input, add);
       wrap.append(list, row);
       return wrap;
@@ -203,10 +204,10 @@ export function openMemoryPanel(): void {
       saveProfile(p);
       say('Applied. I will speak accordingly, {name}.', 'guiding');
       close();
-    });
+    }, 'check');
     apply.id = 'memory-apply';
 
-    const cancel = button('Cancel', 'ghost', close);
+    const cancel = button('Cancel', 'ghost', close, 'x');
 
     const erase = button('Erase everything I know', 'danger', () => {
       if (erase.dataset.confirm !== '1') {
@@ -217,7 +218,7 @@ export function openMemoryPanel(): void {
       eraseAllMemory();
       speakErased();
       close();
-    });
+    }, 'trash-2');
 
     actions.append(apply, cancel, erase);
     panel.appendChild(actions);
@@ -235,20 +236,27 @@ export function openMemoryPanel(): void {
   speakMemoryOpened();
 }
 
-function field(label: string, build: () => HTMLElement): HTMLElement {
+function field(label: string, glyph: IconName, build: () => HTMLElement): HTMLElement {
   const wrap = document.createElement('div');
   wrap.className = 'memory-field';
   const l = document.createElement('label');
   l.textContent = label;
+  prefixIcon(l, glyph);
   wrap.append(l, build());
   return wrap;
 }
 
-function button(label: string, kind: 'primary' | 'ghost' | 'chip' | 'danger', onClick: () => void): HTMLButtonElement {
+function button(
+  label: string,
+  kind: 'primary' | 'ghost' | 'chip' | 'danger',
+  onClick: () => void,
+  glyph?: IconName,
+): HTMLButtonElement {
   const b = document.createElement('button');
   b.type = 'button';
   b.className = `btn btn--${kind}`;
   b.textContent = label;
+  if (glyph) prefixIcon(b, glyph);
   b.addEventListener('click', onClick);
   return b;
 }

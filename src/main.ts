@@ -17,6 +17,7 @@ import { runOnboarding } from './ui/onboarding';
 import { initHeaderControls } from './ui/header';
 import { initChat, toggleChat } from './ui/chat';
 import { buildNav } from './ui/drawer';
+import { prefixIcon, type IconName } from './ui/icons';
 import { AVENUES, avenueById } from './data/avenues';
 
 const quality = detectQuality();
@@ -27,8 +28,8 @@ document.body.classList.add('landing');
 
 /* Nav: two words — communities, and the drawer that holds the rest. */
 buildNav('./avenues.html#community', [
-  ...AVENUES.map((a) => ({ label: a.title.toLowerCase(), href: `./avenues.html#${a.id}` })),
-  { label: 'reach out', href: './contact.html' },
+  ...AVENUES.map((a) => ({ label: a.title.toLowerCase(), href: `./avenues.html#${a.id}`, emblem: a.emblem })),
+  { label: 'reach out', href: './contact.html', icon: 'mail' as const },
 ]);
 document.getElementById('site-head')?.removeAttribute('hidden');
 
@@ -43,11 +44,12 @@ initPresence(quality);
 /* Hero conversation chips — a typed reply first, then the move. */
 const chips = document.getElementById('hero-chips');
 if (chips) {
-  const chip = (label: string, cls: string, act: () => void) => {
+  const chip = (label: string, cls: string, glyph: IconName, act: () => void) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = `btn btn--chip ${cls}`.trim();
     b.textContent = label;
+    prefixIcon(b, glyph);
     b.addEventListener('click', act);
     return b;
   };
@@ -56,14 +58,14 @@ if (chips) {
     window.setTimeout(act, delay);
   };
   chips.append(
-    chip('Walk the avenues', 'external-page-link', replyThen('Then walk with me — the avenues are just through here.', () => {
+    chip('Walk the avenues', 'external-page-link', 'route', replyThen('Then walk with me — the avenues are just through here.', () => {
       window.location.href = './avenues.html';
     })),
-    chip('Just talk with me', '', replyThen('Good. No agenda, no map — just company.', () => toggleChat(), 1100)),
-    chip('Share a testimony', 'external-page-link', replyThen('I keep a page for exactly that — your words stay on your own device.', () => {
+    chip('Just talk with me', '', 'message-circle', replyThen('Good. No agenda, no map — just company.', () => toggleChat(), 1100)),
+    chip('Share a testimony', 'external-page-link', 'feather', replyThen('I keep a page for exactly that — your words stay on your own device.', () => {
       window.location.href = './avenues.html#testimony';
     })),
-    chip('Reach the keepers', 'external-page-link', replyThen('The people who tend this place would love a letter. This way.', () => {
+    chip('Reach the keepers', 'external-page-link', 'mail', replyThen('The people who tend this place would love a letter. This way.', () => {
       window.location.href = './contact.html';
     })),
   );

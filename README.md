@@ -54,6 +54,25 @@ node scripts/smoke.mjs  # headless-chromium smoke test (needs a built dist/)
 
 No backend required; deploy `dist/` to any static host.
 
+## Icons
+
+Two families with strictly separate jobs, so they never compete:
+
+- **[Lucide](https://lucide.dev)** (ISC) — every interface control: nav,
+  buttons, switches, form fields, actions.
+- **[Phosphor Icons](https://phosphoricons.com)** (MIT), duotone weight —
+  the eight avenue emblems only. Two-tone fills read as editorial marks
+  rather than something to click.
+
+Only the ~36 glyphs actually drawn are vendored into `src/ui/icons.ts` by
+`scripts/build-icons.mjs`, so the page makes no icon requests at runtime.
+To change the set, edit the lists in that script and re-run:
+
+```bash
+npm i --no-save lucide-static @phosphor-icons/core
+node scripts/build-icons.mjs
+```
+
 ## Where things live
 
 ```

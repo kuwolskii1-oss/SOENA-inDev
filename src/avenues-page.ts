@@ -26,8 +26,8 @@ if (quality.reducedMotion) document.documentElement.dataset.motion = 'reduced';
 
 renderAvenues();
 buildNav('#community', [
-  ...AVENUES.map((a) => ({ label: a.title.toLowerCase(), href: `#${a.id}` })),
-  { label: 'reach out', href: './contact.html' },
+  ...AVENUES.map((a) => ({ label: a.title.toLowerCase(), href: `#${a.id}`, emblem: a.emblem })),
+  { label: 'reach out', href: './contact.html', icon: 'mail' as const },
 ]);
 document.getElementById('site-head')?.removeAttribute('hidden');
 

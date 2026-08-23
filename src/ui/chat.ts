@@ -10,6 +10,7 @@ import { fill, loadProfile } from '../core/profile';
 import { respond } from '../companion/mind';
 import { say } from '../companion/dialogue';
 import { pointAtSelector } from '../companion/presence';
+import { iconSvg, prefixIcon, type IconName } from './icons';
 
 interface ChatMessage {
   who: 'you' | 'soena';
@@ -53,14 +54,14 @@ export function initChat(): void {
     drawer.setAttribute('aria-label', 'Conversation with SOENA');
     drawer.innerHTML = `
       <header class="chat-head">
-        <span>SOENA</span>
-        <button type="button" class="btn btn--ghost chat-close" aria-label="Close the conversation">rest</button>
+        <span>${iconSvg('message-circle')} SOENA</span>
+        <button type="button" class="btn btn--ghost btn--icon chat-close" aria-label="Close the conversation">${iconSvg('x')}</button>
       </header>
       <div class="chat-log" role="log" aria-live="polite"></div>
       <div class="chat-hints"></div>
       <form class="chat-form">
         <input class="chat-input" type="text" maxlength="600" placeholder="say anything…" aria-label="Say something to SOENA" autocomplete="off" />
-        <button class="btn btn--primary" type="submit">send</button>
+        <button class="btn btn--primary btn--icon" type="submit" aria-label="Send">${iconSvg('send-horizontal')}</button>
       </form>`;
     document.body.appendChild(drawer);
 
@@ -87,19 +88,20 @@ export function initChat(): void {
       render();
     };
 
-    const HINTS = [
-      'suggest me a book',
-      'remember: ',
-      'what do you remember?',
-      'show me the avenues',
-      'tell me a joke',
+    const HINTS: Array<[string, IconName]> = [
+      ['suggest me a book', 'lightbulb'],
+      ['remember: ', 'brain'],
+      ['what do you remember?', 'gem'],
+      ['show me the avenues', 'route'],
+      ['tell me a joke', 'sparkles'],
     ];
     hints.replaceChildren(
-      ...HINTS.map((h) => {
+      ...HINTS.map(([h, glyph]) => {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'btn btn--chip';
         b.textContent = h.trim().replace(/:$/, '…');
+        prefixIcon(b, glyph);
         b.addEventListener('click', () => {
           input.value = h;
           input.focus();

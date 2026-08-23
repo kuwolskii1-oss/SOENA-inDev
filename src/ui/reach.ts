@@ -10,6 +10,7 @@
 import { emit } from '../core/bus';
 import { fill, loadProfile } from '../core/profile';
 import { say } from '../companion/dialogue';
+import { prefixIcon, type IconName } from './icons';
 
 /** Where letters go. Change this when SOENA has a real inbox. */
 const CONTACT_EMAIL = 'hello@soena.example';
@@ -61,6 +62,12 @@ export function renderReach(mount: HTMLElement): void {
   const q0 = heading('What brings you to the door today?');
   const chips = document.createElement('div');
   chips.className = 'chips';
+  const BRANCH_ICON: Record<string, IconName> = {
+    walk: 'route',
+    testimony: 'feather',
+    build: 'sparkles',
+    else: 'message-circle',
+  };
   BRANCHES.forEach((b) => {
     const c = button(b.chip, 'chip', () => {
       branch = b;
@@ -68,6 +75,7 @@ export function renderReach(mount: HTMLElement): void {
       showStep1();
     });
     c.setAttribute('aria-pressed', 'false');
+    prefixIcon(c, BRANCH_ICON[b.id] ?? 'message-circle');
     chips.appendChild(c);
   });
   step0.append(q0, chips);
@@ -111,6 +119,7 @@ export function renderReach(mount: HTMLElement): void {
       }
       showStep2(name, from, body);
     });
+    prefixIcon(go, 'arrow-right');
 
     step1.append(ask, nameField, fromField, message, go);
     step1.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -139,9 +148,10 @@ export function renderReach(mount: HTMLElement): void {
     actions.className = 'threshold-actions';
 
     const mailto = document.createElement('a');
-    mailto.className = 'btn btn--primary';
+    mailto.className = 'btn btn--primary has-icon';
     mailto.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(branch.subject)}&body=${encodeURIComponent(lines)}`;
     mailto.textContent = 'Send with your mail app';
+    prefixIcon(mailto, 'mail');
 
     const copy = button('Copy the letter', 'ghost', async () => {
       try {
@@ -151,6 +161,7 @@ export function renderReach(mount: HTMLElement): void {
         copy.textContent = 'Select and copy it above';
       }
     });
+    prefixIcon(copy, 'copy');
 
     actions.append(mailto, copy);
 

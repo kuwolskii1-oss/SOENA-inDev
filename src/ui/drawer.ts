@@ -3,9 +3,14 @@
  * the avenues, the reaching place — folds into the drawer, a quiet
  * slide-in panel on the right.
  */
+import { emblemSvg, iconSvg, prefixIcon, type EmblemName, type IconName } from './icons';
+
 export interface DrawerItem {
   label: string;
   href: string;
+  /** Avenue emblem (Phosphor) or interface icon (Lucide) for the row. */
+  emblem?: EmblemName;
+  icon?: IconName;
 }
 
 export function buildNav(communitiesHref: string, items: DrawerItem[]): void {
@@ -16,6 +21,7 @@ export function buildNav(communitiesHref: string, items: DrawerItem[]): void {
   const communities = document.createElement('a');
   communities.href = communitiesHref;
   communities.textContent = 'communities';
+  prefixIcon(communities, 'users-round');
   ways.appendChild(communities);
 
   const drawerBtn = document.createElement('button');
@@ -23,6 +29,7 @@ export function buildNav(communitiesHref: string, items: DrawerItem[]): void {
   drawerBtn.id = 'drawer-open';
   drawerBtn.className = 'nav-drawer-btn';
   drawerBtn.textContent = 'drawer';
+  prefixIcon(drawerBtn, 'menu');
   drawerBtn.setAttribute('aria-expanded', 'false');
   ways.appendChild(drawerBtn);
 
@@ -47,8 +54,8 @@ export function buildNav(communitiesHref: string, items: DrawerItem[]): void {
     title.textContent = 'the ways through';
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
-    closeBtn.className = 'btn btn--ghost';
-    closeBtn.textContent = 'close';
+    closeBtn.className = 'btn btn--ghost btn--icon';
+    closeBtn.innerHTML = iconSvg('x', { title: 'Close the drawer' });
     closeBtn.addEventListener('click', closeDrawer);
     head.append(title, closeBtn);
 
@@ -57,7 +64,10 @@ export function buildNav(communitiesHref: string, items: DrawerItem[]): void {
     for (const item of items) {
       const a = document.createElement('a');
       a.href = item.href;
-      a.textContent = item.label;
+      // Emblem (or icon) then label — the mark makes each row scannable.
+      a.innerHTML =
+        (item.emblem ? emblemSvg(item.emblem) : item.icon ? iconSvg(item.icon) : '') +
+        `<span>${item.label}</span>`;
       a.addEventListener('click', closeDrawer);
       list.appendChild(a);
     }

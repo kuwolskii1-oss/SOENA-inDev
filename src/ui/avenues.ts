@@ -9,6 +9,7 @@
 import { on } from '../core/bus';
 import { fill, loadProfile } from '../core/profile';
 import { addLore } from '../core/lore';
+import { emblemSvg, iconSvg, prefixIcon, type IconName } from './icons';
 import { AVENUES, type Avenue, type Door } from '../data/avenues';
 import { speakJournalSaved } from '../companion/dialogue';
 import { addEntry, deleteEntry, formatDate, loadJournal } from './journal';
@@ -41,7 +42,7 @@ export function renderAvenues(): void {
     const head = document.createElement('header');
     head.className = 'avenue-head reveal';
     head.innerHTML = `
-      <span class="avenue-index">${String(index + 1).padStart(2, '0')}</span>
+      <span class="avenue-index">${emblemSvg(avenue.emblem, { className: 'avenue-emblem' })}${String(index + 1).padStart(2, '0')}</span>
       <h2 class="avenue-title" id="${avenue.id}-title">${avenue.title}</h2>
       <p class="avenue-tagline">${avenue.tagline}</p>`;
 
@@ -71,7 +72,7 @@ export function renderAvenues(): void {
   coda.className = 'coda';
   coda.innerHTML = `
     <p class="reveal" data-coda>${fill('Go gently, {name}. The door does not close.')}</p>
-    <a class="coda-reach external-page-link reveal" href="./contact.html">or reach out to those who tend it</a>`;
+    <a class="coda-reach external-page-link reveal has-icon" href="./contact.html">${iconSvg('mail')}<span>or reach out to those who tend it</span></a>`;
   main.appendChild(coda);
 
   // Re-voice personalized fragments when the profile changes.
@@ -96,6 +97,12 @@ function renderDoor(avenue: Avenue, door: Door): HTMLElement {
   card.className = 'door reveal';
   const h = document.createElement('h3');
   h.textContent = door.title;
+  const DOOR_ICON: Record<string, IconName> = {
+    journal: 'notebook-pen',
+    breath: 'wind',
+    prompt: 'lightbulb',
+  };
+  prefixIcon(h, DOOR_ICON[door.kind ?? 'prompt'] ?? 'lightbulb');
   const body = document.createElement('p');
   body.textContent = door.body;
   card.append(h, body);
@@ -123,6 +130,7 @@ function renderBreath(): HTMLElement {
   start.type = 'button';
   start.className = 'btn btn--primary';
   start.textContent = 'Breathe with me';
+  prefixIcon(start, 'wind');
 
   let timer: number | undefined;
   let running = false;
@@ -185,6 +193,7 @@ function renderJournal(avenueId: string): HTMLElement {
   save.type = 'button';
   save.className = 'btn btn--primary';
   save.textContent = 'Keep these words';
+  prefixIcon(save, 'feather');
 
   const list = document.createElement('div');
   list.className = 'journal-list';
@@ -197,12 +206,14 @@ function renderJournal(avenueId: string): HTMLElement {
         item.className = 'journal-entry';
         const meta = document.createElement('header');
         meta.textContent = formatDate(e.at);
+        prefixIcon(meta, 'calendar');
         const text = document.createElement('p');
         text.textContent = e.text;
         const del = document.createElement('button');
         del.type = 'button';
         del.className = 'btn btn--ghost';
         del.textContent = 'release';
+        prefixIcon(del, 'trash-2');
         del.addEventListener('click', () => {
           deleteEntry(e.id);
           renderList();
@@ -240,6 +251,7 @@ function renderVoices(): HTMLElement {
   const h = document.createElement('h3');
   h.className = 'voices-title';
   h.textContent = 'Voices at the door';
+  prefixIcon(h, 'users-round');
   const note = document.createElement('p');
   note.className = 'voices-note';
   note.textContent = 'Left by other travellers, kept anonymous, shared with consent.';
