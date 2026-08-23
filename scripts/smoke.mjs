@@ -138,6 +138,22 @@ await page.waitForTimeout(900);
 results.appliedName = await page.evaluate(() => JSON.parse(localStorage.getItem('soena.profile.v1')).name);
 await page.screenshot({ path: 'scripts/.shots/shot-memory.png' });
 
+// Day -> night: the toggle must play the transition video over the
+// backdrop (VP9 decodes in this Chromium), flip the theme mid-clip,
+// store the choice, and clean the video up afterwards.
+results.themeTogglePresent = (await page.locator('#theme-toggle').count()) === 1;
+await page.locator('#theme-toggle').click();
+results.themeVideoPlayed = await page
+  .waitForSelector('#backdrop video', { timeout: 1500 })
+  .then(() => true)
+  .catch(() => false);
+await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark', null, { timeout: 5000 });
+results.themeAfterToggle = await page.evaluate(() => document.documentElement.dataset.theme);
+results.themeStored = await page.evaluate(() => localStorage.getItem('soena.theme.v1'));
+await page.waitForTimeout(1600);
+results.themeVideoCleaned = (await page.locator('#backdrop video').count()) === 0;
+await page.screenshot({ path: 'scripts/.shots/shot-night.png' });
+
 // Avenues live on their own page; navigation goes through the drawer.
 // Inner pages open behind the brief arrival curtain.
 await page.goto('http://localhost:4173/avenues.html', { waitUntil: 'networkidle' });
@@ -146,6 +162,8 @@ await page.waitForTimeout(1200);
 results.arrivalOnInnerPages = await page.evaluate(() =>
   document.documentElement.classList.contains('has-arrival'),
 );
+// The chosen night must survive navigation, applied before first paint.
+results.themePersistedOnAvenues = await page.evaluate(() => document.documentElement.dataset.theme);
 results.navItems = await page.locator('#ways > *').count(); // communities + drawer
 results.avenueEmblems = await page.locator('.avenue-emblem').count();
 await page.locator('#drawer-open').click();
@@ -213,6 +231,14 @@ await page.waitForTimeout(700);
 results.reachLetter = await page.locator('.reach-letter').textContent();
 results.reachMailto = await page.locator('.reach a.btn--primary').getAttribute('href');
 await page.screenshot({ path: 'scripts/.shots/shot-reach.png' });
+
+// Night -> day, from another page: the reverse clip plays, the theme
+// returns to light, and the stored choice follows.
+await page.locator('#theme-toggle').click();
+await page.waitForFunction(() => document.documentElement.dataset.theme !== 'dark', null, { timeout: 5000 });
+results.themeBackToLight = await page.evaluate(
+  () => (document.documentElement.dataset.theme ?? 'light') + '/' + localStorage.getItem('soena.theme.v1'),
+);
 
 results.errors = errors;
 console.log(JSON.stringify(results, null, 2));

@@ -1,14 +1,16 @@
 /**
- * Header controls shared by every page: the voice awakening gesture and
- * the memory door.
+ * Header controls shared by every page: the day/night toggle, the voice
+ * awakening gesture and the memory door.
  */
 import { loadProfile, saveProfile } from '../core/profile';
 import { setVoiceEnabled, speechSupported } from '../core/speech';
 import { say } from '../companion/dialogue';
 import { openMemoryPanel } from './memory';
+import { initTheme } from './theme';
 import { iconSvg, prefixIcon } from './icons';
 
 export function initHeaderControls(): void {
+  initTheme();
   const voiceBtn = document.getElementById('voice-toggle') as HTMLButtonElement | null;
   if (voiceBtn) {
     // The voice control is a switch, not a button: label + track + thumb.

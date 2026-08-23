@@ -32,7 +32,7 @@ const LUCIDE = [
   'user', 'compass', 'target', 'gem', 'users-round', 'route', 'message-circle',
   'feather', 'send-horizontal', 'notebook-pen', 'wind', 'lightbulb', 'mail',
   'copy', 'arrow-right', 'door-open', 'calendar', 'sparkles', 'pen-line',
-  'chevron-right',
+  'chevron-right', 'sun', 'moon',
 ];
 
 /** Avenue emblems — Phosphor duotone (editorial, never interactive). */
