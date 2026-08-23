@@ -13,6 +13,7 @@ import { detectQuality } from './core/quality';
 import { startScroll } from './core/scroll';
 import { initPresence, pointAtSelector } from './companion/presence';
 import { greet, say, speakIntention } from './companion/dialogue';
+import { beginArrival } from './ui/arrival';
 import { runOnboarding } from './ui/onboarding';
 import { initHeaderControls } from './ui/header';
 import { initChat, toggleChat } from './ui/chat';
@@ -25,6 +26,11 @@ document.documentElement.dataset.tier = String(quality.tier);
 if (quality.reducedMotion) document.documentElement.dataset.motion = 'reduced';
 
 document.body.classList.add('landing');
+
+/* The door stays closed for one breath while the page readies itself
+   behind it (fonts, layout, the staged entrance) — full ceremony here,
+   since the landing is the first thing anyone meets. */
+const arrival = beginArrival('full');
 
 /* Nav: two words — communities, and the drawer that holds the rest. */
 buildNav('./avenues.html#community', [
@@ -91,27 +97,31 @@ window.addEventListener(
 
 /* Arrival ---------------------------------------------------------- */
 
-const existing = loadProfile();
-if (existing) {
-  touchVisit();
-  window.setTimeout(() => {
-    greet();
-    if (existing.lastAvenue && avenueById(existing.lastAvenue)) {
-      offerContinue(existing.lastAvenue);
-    }
-  }, 900);
-} else {
-  window.setTimeout(() => {
-    runOnboarding((entered) => {
+/* Nobody gets spoken to through a closed door: the greeting and the
+   onboarding wait for the veil to lift, then land a beat later. */
+arrival.then(() => {
+  const existing = loadProfile();
+  if (existing) {
+    touchVisit();
+    window.setTimeout(() => {
       greet();
-      if (entered) {
-        window.setTimeout(speakIntention, 6500);
-        // A first small demonstration of pointing: where memory lives.
-        window.setTimeout(() => pointAtSelector('#memory-open'), 12000);
+      if (existing.lastAvenue && avenueById(existing.lastAvenue)) {
+        offerContinue(existing.lastAvenue);
       }
-    });
-  }, 700);
-}
+    }, 900);
+  } else {
+    window.setTimeout(() => {
+      runOnboarding((entered) => {
+        greet();
+        if (entered) {
+          window.setTimeout(speakIntention, 6500);
+          // A first small demonstration of pointing: where memory lives.
+          window.setTimeout(() => pointAtSelector('#memory-open'), 12000);
+        }
+      });
+    }, 650);
+  }
+});
 
 function offerContinue(avenueId: string): void {
   const avenue = avenueById(avenueId);

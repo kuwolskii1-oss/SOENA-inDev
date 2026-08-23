@@ -956,3 +956,109 @@ body.landing .hero-left { position: relative; z-index: 2; }
 /* The label a prefixed icon sits beside; relabelling writes here so the
    icon is never destroyed (see setLabel in ui/icons.ts). */
 .btn-label { display: inline; }
+
+/* ---------------------------------------------------------------
+   The arrival — the door held closed for one breath, then lifted.
+
+   The veil itself is painted from each page's critical CSS (it must
+   exist on the very first frame, before this bundle arrives); these
+   rules are the bundle-side copy plus the part only the app needs:
+   the choreographed entrance underneath. Because the reveal happens
+   at a moment we control (fonts loaded, layout settled — see
+   ui/arrival.ts), the content can rise in a deliberate stagger
+   instead of appearing whenever the network happens to deliver it.
+   Every hold is gated on html.has-arrival, which only the JS boot
+   sets — a scriptless visitor sees the plain page, never a veil.
+   --------------------------------------------------------------- */
+
+#arrival {
+  position: fixed; inset: 0; z-index: 120;
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--ink);
+}
+.has-arrival #arrival { display: flex; }
+html.has-arrival:not(.arrival-done) { overflow: hidden; }
+
+.arrival-word {
+  margin: 0; color: var(--bg);
+  font-family: var(--serif);
+  font-weight: 480; font-size: clamp(1.9rem, 5.4vw, 3.1rem);
+  letter-spacing: 0.32em; text-indent: 0.32em;
+}
+.arrival-word span {
+  display: inline-block; opacity: 0; transform: translateY(0.55em);
+  transition: opacity 0.55s var(--ease), transform 0.55s var(--ease);
+}
+#arrival.is-lit .arrival-word span { opacity: 1; transform: none; }
+#arrival.is-lit .arrival-word span:nth-child(2) { transition-delay: 60ms; }
+#arrival.is-lit .arrival-word span:nth-child(3) { transition-delay: 120ms; }
+#arrival.is-lit .arrival-word span:nth-child(4) { transition-delay: 180ms; }
+#arrival.is-lit .arrival-word span:nth-child(5) { transition-delay: 240ms; }
+
+/* Brief curtain (inner pages): the word sits quietly, only the line moves. */
+#arrival.arrival--brief .arrival-word { font-size: clamp(1.3rem, 3.4vw, 1.8rem); }
+#arrival.arrival--brief .arrival-word span { opacity: 1; transform: none; transition: none; }
+
+.arrival-line {
+  width: min(9rem, 30vw); height: 2px; margin-top: 1.4rem;
+  background: var(--lime); border-radius: 2px;
+  box-shadow: 0 0 18px rgba(199, 244, 84, 0.55);
+  transform: scaleX(0);
+  transition: transform 1s var(--ease) 0.12s;
+}
+#arrival.arrival--brief .arrival-line { width: min(7rem, 26vw); margin-top: 1.15rem; }
+#arrival.is-lit .arrival-line { transform: scaleX(1); }
+
+html.arrival-done #arrival {
+  transform: translateY(-101%); pointer-events: none;
+  transition: transform 0.85s var(--ease);
+}
+
+/* The entrance underneath: held while the veil is down, released in a
+   stagger the moment the lift begins, so the page is alive mid-reveal. */
+html.has-arrival .hero-brand,
+html.has-arrival #site-head,
+html.has-arrival .hero-left > *,
+html.has-arrival #avenues-hero > h1,
+html.has-arrival #avenues-hero > p,
+html.has-arrival #reach-hero > h1,
+html.has-arrival #reach-hero > p {
+  opacity: 0; transform: translateY(16px);
+}
+html.arrival-done .hero-brand,
+html.arrival-done #site-head,
+html.arrival-done .hero-left > *,
+html.arrival-done #avenues-hero > h1,
+html.arrival-done #avenues-hero > p,
+html.arrival-done #reach-hero > h1,
+html.arrival-done #reach-hero > p {
+  opacity: 1; transform: none;
+  transition: opacity 0.9s var(--ease), transform 0.9s var(--ease);
+}
+html.arrival-done .hero-brand { transition-delay: 0.1s; }
+html.arrival-done #site-head { transition-delay: 0.25s; }
+html.arrival-done .hero-left > :nth-child(1),
+html.arrival-done #avenues-hero > h1,
+html.arrival-done #reach-hero > h1 { transition-delay: 0.16s; }
+html.arrival-done .hero-left > :nth-child(2),
+html.arrival-done #avenues-hero > p,
+html.arrival-done #reach-hero > p { transition-delay: 0.3s; }
+html.arrival-done .hero-left > :nth-child(3) { transition-delay: 0.46s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .arrival-word span, .arrival-line { transition-duration: 0.01s; }
+  html.arrival-done #arrival {
+    transform: none; opacity: 0; visibility: hidden;
+    transition: opacity 0.25s linear, visibility 0s linear 0.25s;
+  }
+  /* No held entrance at all: content is simply present. */
+  html.has-arrival .hero-brand,
+  html.has-arrival #site-head,
+  html.has-arrival .hero-left > *,
+  html.has-arrival #avenues-hero > h1,
+  html.has-arrival #avenues-hero > p,
+  html.has-arrival #reach-hero > h1,
+  html.has-arrival #reach-hero > p {
+    opacity: 1; transform: none; transition: none;
+  }
+}

@@ -52,10 +52,67 @@
       }
       #hero-chips { display: flex; flex-wrap: wrap; gap: 0.55rem; }
       noscript p { color: rgba(4,35,28,.8); max-width: 40ch; margin: 2rem 0; }
+      /* The arrival veil — the door, closed for one breath. Painted from
+         this critical CSS so it is there on the very first frame, shown
+         only when JS runs (html.has-arrival), lifted by the app once the
+         type has loaded and the layout beneath has settled. */
+      #arrival {
+        position: fixed; inset: 0; z-index: 120;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+        background: #04231c;
+      }
+      .has-arrival #arrival { display: flex; }
+      .arrival-word {
+        margin: 0; color: #fbfff9;
+        font-family: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+        font-weight: 480; font-size: clamp(1.9rem, 5.4vw, 3.1rem);
+        letter-spacing: 0.32em; text-indent: 0.32em;
+      }
+      .arrival-word span {
+        display: inline-block; opacity: 0; transform: translateY(0.55em);
+        transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      #arrival.is-lit .arrival-word span { opacity: 1; transform: none; }
+      #arrival.is-lit .arrival-word span:nth-child(2) { transition-delay: 60ms; }
+      #arrival.is-lit .arrival-word span:nth-child(3) { transition-delay: 120ms; }
+      #arrival.is-lit .arrival-word span:nth-child(4) { transition-delay: 180ms; }
+      #arrival.is-lit .arrival-word span:nth-child(5) { transition-delay: 240ms; }
+      .arrival-line {
+        width: min(9rem, 30vw); height: 2px; margin-top: 1.4rem;
+        background: #c7f454; border-radius: 2px;
+        box-shadow: 0 0 18px rgba(199, 244, 84, 0.55);
+        transform: scaleX(0);
+        transition: transform 1s cubic-bezier(0.22, 1, 0.36, 1) 0.12s;
+      }
+      #arrival.is-lit .arrival-line { transform: scaleX(1); }
+      html.arrival-done #arrival {
+        transform: translateY(-101%); pointer-events: none;
+        transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .arrival-word span, .arrival-line { transition-duration: 0.01s; }
+        html.arrival-done #arrival {
+          transform: none; opacity: 0; visibility: hidden;
+          transition: opacity 0.25s linear, visibility 0s linear 0.25s;
+        }
+      }
     </style>
+    <script>
+      // Gate the veil on JS actually running, so a scriptless visitor never
+      // faces a closed door; and lift it after 4s even if the app never
+      // arrives. The app clears this failsafe the moment it boots.
+      document.documentElement.classList.add('has-arrival');
+      window.__soenaArrival = setTimeout(function () {
+        document.documentElement.classList.add('arrival-done');
+      }, 4000);
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body data-presence-anchor="-0.92" data-presence-scale="0.36">
+    <div id="arrival" aria-hidden="true">
+      <p class="arrival-word"><span>S</span><span>O</span><span>E</span><span>N</span><span>A</span></p>
+      <span class="arrival-line"></span>
+    </div>
     <div id="aura" aria-hidden="true"></div>
     <canvas id="gl" aria-hidden="true"></canvas>
 

@@ -13,6 +13,7 @@ import { detectQuality } from './core/quality';
 import { startScroll } from './core/scroll';
 import { initPresence } from './companion/presence';
 import { say } from './companion/dialogue';
+import { beginArrival } from './ui/arrival';
 import { initHeaderControls } from './ui/header';
 import { initChat } from './ui/chat';
 import { renderReach } from './ui/reach';
@@ -20,6 +21,10 @@ import { renderReach } from './ui/reach';
 const quality = detectQuality();
 document.documentElement.dataset.tier = String(quality.tier);
 if (quality.reducedMotion) document.documentElement.dataset.motion = 'reduced';
+
+/* Inner page: the brief curtain — enough to cover the settling, never
+   enough to make moving around the site feel gated. */
+const arrival = beginArrival('brief');
 
 const mount = document.getElementById('reach');
 if (mount) renderReach(mount);
@@ -47,12 +52,14 @@ window.addEventListener(
   { passive: true },
 );
 
-window.setTimeout(() => {
-  const p = loadProfile();
-  say(
-    p
-      ? 'The reaching place, {name}. Whatever {they} {have} to say, I will help {them} fold it into a letter.'
-      : 'This is the reaching place. Whoever you are, a letter from you is welcome — I will help you fold it.',
-    'greeting',
-  );
-}, 900);
+arrival.then(() => {
+  window.setTimeout(() => {
+    const p = loadProfile();
+    say(
+      p
+        ? 'The reaching place, {name}. Whatever {they} {have} to say, I will help {them} fold it into a letter.'
+        : 'This is the reaching place. Whoever you are, a letter from you is welcome — I will help you fold it.',
+      'greeting',
+    );
+  }, 700);
+});
