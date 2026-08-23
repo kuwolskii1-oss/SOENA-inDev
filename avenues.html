@@ -11,6 +11,7 @@
       /* Critical shell: paints the garden before any bundle arrives. */
       :root { color-scheme: light; }
       html { background: #fbfff9; }
+      html[data-theme='dark'] { background: #04231c; color-scheme: dark; }
       body {
         margin: 0;
         background: #fbfff9;
@@ -18,13 +19,30 @@
         font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
         min-height: 100vh;
       }
+      [data-theme='dark'] body { background: #04231c; color: #fbfff9; }
+      /* The canopy overhead: day or night still, aura wash above it. */
+      #backdrop {
+        position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+        background: #fbfff9 center / cover no-repeat url('./bg/canopy-day.webp');
+      }
+      [data-theme='dark'] #backdrop {
+        background-color: #04231c;
+        background-image: url('./bg/canopy-night.webp');
+      }
       #aura {
         position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background:
-          radial-gradient(70rem 54rem at 60% 38%, rgba(255, 255, 255, 0.95), transparent 70%),
-          radial-gradient(44rem 40rem at 22% 82%, rgba(173, 245, 188, 0.35), transparent 65%),
-          linear-gradient(#fbfff9, #e8f4e9);
+          radial-gradient(70rem 54rem at 60% 38%, rgba(251, 255, 249, 0.58), transparent 70%),
+          radial-gradient(44rem 40rem at 22% 82%, rgba(173, 245, 188, 0.24), transparent 65%),
+          linear-gradient(rgba(251, 255, 249, 0.4), rgba(232, 244, 233, 0.46));
       }
+      [data-theme='dark'] #aura {
+        background:
+          radial-gradient(70rem 54rem at 60% 38%, rgba(4, 35, 28, 0.26), transparent 70%),
+          radial-gradient(44rem 40rem at 22% 82%, rgba(4, 35, 28, 0.36), transparent 65%),
+          linear-gradient(rgba(4, 35, 28, 0.26), rgba(4, 35, 28, 0.44));
+      }
+      [data-theme='dark'] #avenues-hero p { color: rgba(251,255,249,.66); }
       #avenues-hero {
         position: relative; z-index: 1; min-height: 38vh;
         display: grid; place-content: end start; gap: 0.6rem;
@@ -71,6 +89,11 @@
       }
     </style>
     <script>
+      // Restore the chosen theme before first paint.
+      try {
+        if (localStorage.getItem('soena.theme.v1') === 'dark')
+          document.documentElement.dataset.theme = 'dark';
+      } catch (e) {}
       // Veil only when JS runs; failsafe lift at 4s if the app never boots.
       document.documentElement.classList.add('has-arrival');
       window.__soenaArrival = setTimeout(function () {
@@ -84,6 +107,7 @@
       <p class="arrival-word"><span>S</span><span>O</span><span>E</span><span>N</span><span>A</span></p>
       <span class="arrival-line"></span>
     </div>
+    <div id="backdrop" aria-hidden="true"></div>
     <div id="aura" aria-hidden="true"></div>
     <canvas id="gl" aria-hidden="true"></canvas>
 
