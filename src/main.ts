@@ -1,23 +1,18 @@
 /**
- * SOENA — boot sequence.
- *
- * Order matters for performance:
- *  1. The HTML shell has already painted (critical CSS is inline).
- *  2. This module renders content and starts the scroll loop — still no 3D.
- *  3. The WebGL presence loads itself during idle time from a lazy chunk.
+ * SOENA — the landing door. One still screen, no scrolling: the
+ * conversation on the left, and SOENA keeping a small post in the
+ * bottom-left corner. The walking happens on avenues.html.
  */
 import '@fontsource-variable/fraunces/index.css';
 import '@fontsource-variable/outfit/index.css';
 import './styles/main.css';
 
-import { emit, on } from './core/bus';
+import { emit } from './core/bus';
 import { loadProfile, touchVisit } from './core/profile';
-import { addMomentOnce } from './core/lore';
 import { detectQuality } from './core/quality';
-import { observeSections, scrollToSection, startScroll } from './core/scroll';
+import { startScroll } from './core/scroll';
 import { initPresence, pointAtSelector } from './companion/presence';
-import { greet, say, speakAvenue, speakIntention } from './companion/dialogue';
-import { renderAvenues } from './ui/avenues';
+import { greet, say, speakIntention } from './companion/dialogue';
 import { runOnboarding } from './ui/onboarding';
 import { initHeaderControls } from './ui/header';
 import { initChat } from './ui/chat';
@@ -27,43 +22,64 @@ const quality = detectQuality();
 document.documentElement.dataset.tier = String(quality.tier);
 if (quality.reducedMotion) document.documentElement.dataset.motion = 'reduced';
 
-/* Content ------------------------------------------------------- */
+document.body.classList.add('landing');
 
-renderAvenues();
-enhanceHero();
+/* Nav: the avenues live on their own page now. */
+const ways = document.getElementById('ways');
+if (ways) {
+  for (const avenue of AVENUES) {
+    const a = document.createElement('a');
+    a.href = `./avenues.html#${avenue.id}`;
+    a.textContent = avenue.title;
+    a.className = 'external-page-link';
+    ways.appendChild(a);
+  }
+  const reach = document.createElement('a');
+  reach.href = './contact.html';
+  reach.textContent = 'reach out';
+  reach.className = 'external-page-link';
+  ways.appendChild(reach);
+}
 document.getElementById('site-head')?.removeAttribute('hidden');
 
-/* Scroll + sections ---------------------------------------------- */
+initHeaderControls();
+initChat();
 
-startScroll(quality.reducedMotion);
-observeSections();
-
-on('avenue:enter', ({ id }) => {
-  // Re-tint the CSS aura (works with or without WebGL).
-  const avenue = avenueById(id);
-  const aura = document.getElementById('aura');
-  if (aura && avenue) {
-    aura.style.setProperty('--aura-h1', String(avenue.hues[0]));
-    aura.style.setProperty('--aura-h2', String(avenue.hues[1]));
-  }
-  document.querySelectorAll('#ways a').forEach((a) => {
-    a.classList.toggle('is-active', a.getAttribute('href') === `#${id}`);
-  });
-  if (avenue) {
-    speakAvenue(id);
-    // Lore: SOENA quietly remembers the first time each avenue was walked.
-    if (loadProfile()) {
-      addMomentOnce(`first-${id}`, `first walked the avenue of ${avenue.title.toLowerCase()}`);
-    }
-  }
-});
-
-/* The companion's body ------------------------------------------- */
+/* No scrolling here — but the shared rAF loop still drives the scene. */
+startScroll(true);
 
 initPresence(quality);
 
-/* Pointer parallax (rAF-throttled) -------------------------------- */
+/* Hero conversation chips — a typed reply first, then the move. */
+const chips = document.getElementById('hero-chips');
+if (chips) {
+  const chip = (label: string, cls: string, act: () => void) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `btn btn--chip ${cls}`.trim();
+    b.textContent = label;
+    b.addEventListener('click', act);
+    return b;
+  };
+  const replyThen = (line: string, act: () => void, delay = 1600) => () => {
+    say(line, 'guiding');
+    window.setTimeout(act, delay);
+  };
+  chips.append(
+    chip('Walk the avenues', 'external-page-link', replyThen('Then walk with me — the avenues are just through here.', () => {
+      window.location.href = './avenues.html';
+    })),
+    chip('Just talk with me', '', replyThen('Good. No agenda, no map — just company.', () => document.getElementById('chat-open')?.click(), 1100)),
+    chip('Share a testimony', 'external-page-link', replyThen('I keep a page for exactly that — your words stay on your own device.', () => {
+      window.location.href = './avenues.html#testimony';
+    })),
+    chip('Reach the keepers', 'external-page-link', replyThen('The people who tend this place would love a letter. This way.', () => {
+      window.location.href = './contact.html';
+    })),
+  );
+}
 
+/* Pointer parallax (rAF-throttled) — feeds the corner avatar's gaze. */
 let pointerScheduled = false;
 window.addEventListener(
   'pointermove',
@@ -80,22 +96,6 @@ window.addEventListener(
   },
   { passive: true },
 );
-
-/* Header controls ------------------------------------------------- */
-
-initHeaderControls();
-initChat();
-
-// A way to the reaching place (stripped from single-file preview builds,
-// which carry only this page).
-const ways = document.getElementById('ways');
-if (ways) {
-  const reach = document.createElement('a');
-  reach.href = './contact.html';
-  reach.textContent = 'reach out';
-  reach.className = 'external-page-link';
-  ways.appendChild(reach);
-}
 
 /* Arrival ---------------------------------------------------------- */
 
@@ -121,52 +121,6 @@ if (existing) {
   }, 700);
 }
 
-/* ------------------------------------------------------------------ */
-
-function enhanceHero(): void {
-  const hero = document.getElementById('boot-hero');
-  if (!hero) return;
-  hero.dataset.avenue = 'threshold';
-
-  // The conversation chips — the door's first exchange, LISA-style:
-  // a scripted opening move for each kind of visitor.
-  const chips = document.getElementById('hero-chips');
-  if (chips) {
-    const chip = (label: string, act: () => void) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'btn btn--chip';
-      b.textContent = label;
-      b.addEventListener('click', act);
-      return b;
-    };
-    // Each chip earns a typed reply before anything moves — conversation
-    // first, navigation second.
-    const replyThen = (line: string, act: () => void, delay = 1600) => () => {
-      say(line, 'guiding');
-      window.setTimeout(act, delay);
-    };
-    chips.append(
-      chip('Walk the avenues', replyThen('Then walk with me — the avenues open just below.', () => scrollToSection(AVENUES[0].id))),
-      chip('Just talk with me', replyThen('Good. No agenda, no map — just company.', () => document.getElementById('chat-open')?.click(), 1100)),
-      chip('Share a testimony', replyThen('I keep a page for exactly that. Come — your words stay on your own device.', () => scrollToSection('testimony'))),
-      chip('Reach the keepers', replyThen('The people who tend this place would love a letter. This way.', () => {
-        window.location.href = './contact.html';
-      })),
-    );
-  }
-
-  const left = hero.querySelector('.hero-left');
-  if (left) {
-    const cue = document.createElement('button');
-    cue.type = 'button';
-    cue.className = 'hero-cue';
-    cue.innerHTML = `<span>step through</span><span class="hero-cue-line" aria-hidden="true"></span>`;
-    cue.addEventListener('click', () => scrollToSection(AVENUES[0].id));
-    left.appendChild(cue);
-  }
-}
-
 function offerContinue(avenueId: string): void {
   const avenue = avenueById(avenueId);
   if (!avenue) return;
@@ -181,14 +135,13 @@ function offerContinue(avenueId: string): void {
   const dismiss = document.createElement('button');
   dismiss.type = 'button';
   dismiss.className = 'btn btn--ghost';
-  dismiss.textContent = 'Start at the door';
+  dismiss.textContent = 'Stay at the door';
   const closeBar = () => {
     bar.classList.add('is-leaving');
     window.setTimeout(() => bar.remove(), 400);
   };
   go.addEventListener('click', () => {
-    scrollToSection(avenueId);
-    closeBar();
+    window.location.href = `./avenues.html#${avenueId}`;
   });
   dismiss.addEventListener('click', closeBar);
   bar.append(label, go, dismiss);

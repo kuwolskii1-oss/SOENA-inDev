@@ -6,19 +6,26 @@
    prefers-reduced-motion.
    ================================================================ */
 
-/* Light silver studio — the character IS the scenery; everything else
-   whispers. One committed visual world, painted explicitly. */
+/* The garden system (palette subject to change): off-white ground
+   #FBFFF9, deep forest ink #04231C, living green #377B42 for the
+   interactive layer, forest #134623 + mint #C4F6C5 for primary actions,
+   lime #C7F454 reserved as the glow. One committed visual world. */
 :root {
-  --ink: #17171b;
-  --ink-dim: rgba(23, 23, 27, 0.64);
-  --ink-faint: rgba(23, 23, 27, 0.4);
-  --bg: #d7d8da;
-  --frost: rgba(255, 255, 255, 0.6);
-  --veil: rgba(23, 23, 27, 0.12);
-  --veil-strong: rgba(23, 23, 27, 0.24);
-  --accent: #6a58f2;
-  --accent-soft: rgba(106, 88, 242, 0.13);
-  --danger: #c8483c;
+  --ink: #04231c;
+  --ink-dim: rgba(4, 35, 28, 0.66);
+  --ink-faint: rgba(4, 35, 28, 0.42);
+  --bg: #fbfff9;
+  --frost: rgba(255, 255, 255, 0.66);
+  --veil: rgba(4, 35, 28, 0.13);
+  --veil-strong: rgba(4, 35, 28, 0.26);
+  --accent: #377b42;
+  --accent-deep: #134623;
+  --accent-teal: #196966;
+  --mint: #c4f6c5;
+  --mint-soft: #adf5bc;
+  --lime: #c7f454;
+  --accent-soft: rgba(55, 123, 66, 0.13);
+  --danger: #b3402f;
   --serif: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
   --sans: 'Outfit Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -44,10 +51,11 @@ body {
   --aura-h1: 255;
   --aura-h2: 205;
   background:
-    radial-gradient(70rem 54rem at 64% 40%, rgba(255, 255, 255, 0.9), transparent 70%),
-    radial-gradient(40rem 40rem at 30% 70%, hsl(var(--aura-h1) 60% 70% / 0.10), transparent 65%),
-    radial-gradient(34rem 30rem at 70% 20%, hsl(var(--aura-h2) 60% 72% / 0.07), transparent 60%),
-    linear-gradient(#d9dadc, #cfd0d3);
+    radial-gradient(70rem 54rem at 60% 38%, rgba(255, 255, 255, 0.95), transparent 70%),
+    radial-gradient(44rem 40rem at 22% 82%, rgba(173, 245, 188, 0.35), transparent 65%),
+    radial-gradient(34rem 30rem at 78% 18%, rgba(199, 244, 84, 0.16), transparent 60%),
+    radial-gradient(40rem 36rem at 50% 60%, hsl(var(--aura-h1) 55% 72% / 0.08), transparent 65%),
+    linear-gradient(#fbfff9, #e8f4e9);
   transition: background 1.2s linear;
 }
 
@@ -79,7 +87,7 @@ main, header, footer { position: relative; z-index: 2; }
   align-items: center;
   gap: 1.5rem;
   padding: 0.9rem 1.4rem;
-  background: linear-gradient(rgba(215, 216, 218, 0.9), rgba(215, 216, 218, 0));
+  background: linear-gradient(rgba(251, 255, 249, 0.92), rgba(251, 255, 249, 0));
   backdrop-filter: blur(2px);
 }
 
@@ -302,11 +310,11 @@ main, header, footer { position: relative; z-index: 2; }
 }
 .btn:active { transform: scale(0.97); }
 .btn--primary {
-  background: var(--accent);
-  border: 1px solid var(--accent);
-  color: #fff;
+  background: var(--accent-deep);
+  border: 1px solid var(--accent-deep);
+  color: var(--mint);
 }
-.btn--primary:hover, .btn--primary:focus-visible { background: #8f81ff; }
+.btn--primary:hover, .btn--primary:focus-visible { background: var(--accent-teal); border-color: var(--accent-teal); }
 .btn--ghost {
   background: transparent;
   border: 1px solid var(--veil);
@@ -327,9 +335,9 @@ main, header, footer { position: relative; z-index: 2; }
   font-size: 0.84rem;
 }
 .btn--chip[aria-pressed='true'] {
-  background: var(--accent-soft);
+  background: var(--mint);
   border-color: var(--accent);
-  color: var(--ink);
+  color: var(--accent-deep);
 }
 
 .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.2rem 0; }
@@ -342,7 +350,7 @@ main, header, footer { position: relative; z-index: 2; }
   height: 72px;
   border-radius: 50%;
   border: 1px solid var(--veil-strong);
-  background: radial-gradient(circle, var(--accent-soft), transparent 70%);
+  background: radial-gradient(circle, rgba(173, 245, 188, 0.55), transparent 70%);
   transform: scale(0.72);
   transition: transform 4s cubic-bezier(0.45, 0, 0.55, 1);
 }
@@ -729,8 +737,8 @@ select.threshold-input option { background: #f4f4f6; color: var(--ink); }
   animation: spotlight 1.3s ease-in-out infinite;
 }
 @keyframes spotlight {
-  0%, 100% { outline-color: rgba(124, 108, 255, 0.95); box-shadow: 0 0 0 0 rgba(124, 108, 255, 0.35); }
-  50% { outline-color: rgba(201, 191, 255, 0.9); box-shadow: 0 0 22px 4px rgba(124, 108, 255, 0.28); }
+  0%, 100% { outline-color: rgba(55, 123, 66, 0.95); box-shadow: 0 0 0 0 rgba(199, 244, 84, 0.45); }
+  50% { outline-color: rgba(19, 105, 102, 0.9); box-shadow: 0 0 22px 5px rgba(199, 244, 84, 0.4); }
 }
 
 /* ---------------------------------------------------------------
@@ -770,3 +778,12 @@ select.threshold-input option { background: #f4f4f6; color: var(--ink); }
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+
+
+/* ---------------------------------------------------------------
+   Landing (the door): one screen, no scrolling — SOENA keeps a small
+   post in the bottom-left corner like a companion at a desk.
+   --------------------------------------------------------------- */
+body.landing { overflow: hidden; height: 100svh; }
+body.landing #boot-hero { height: 100svh; min-height: 0; }
+body.landing .hero-left { position: relative; z-index: 2; }

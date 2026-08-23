@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="The avenues of SOENA — journeys, callings, encounters, guidance, community, testimony, experience, consolidation — each re-voiced for the path you actually walk." />
+    <meta name="theme-color" content="#fbfff9" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <title>The Avenues — SOENA</title>
+    <style>
+      /* Critical shell: paints the garden before any bundle arrives. */
+      :root { color-scheme: light; }
+      html { background: #fbfff9; }
+      body {
+        margin: 0;
+        background: #fbfff9;
+        color: #04231c;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        min-height: 100vh;
+      }
+      #aura {
+        position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        background:
+          radial-gradient(70rem 54rem at 60% 38%, rgba(255, 255, 255, 0.95), transparent 70%),
+          radial-gradient(44rem 40rem at 22% 82%, rgba(173, 245, 188, 0.35), transparent 65%),
+          linear-gradient(#fbfff9, #e8f4e9);
+      }
+      #avenues-hero {
+        position: relative; z-index: 1; min-height: 38vh;
+        display: grid; place-content: end start; gap: 0.6rem;
+        padding: 7rem 6vw 0;
+      }
+      #avenues-hero h1 { margin: 0; font-size: clamp(2rem, 6vw, 3.6rem); font-weight: 500; }
+      #avenues-hero p { margin: 0; max-width: 44ch; color: rgba(4,35,28,.66); line-height: 1.6; }
+      noscript p { color: rgba(4,35,28,.85); max-width: 40ch; margin: 2rem auto; text-align: center; }
+    </style>
+    <script type="module" src="/src/avenues-page.ts"></script>
+  </head>
+  <body>
+    <div id="aura" aria-hidden="true"></div>
+    <canvas id="gl" aria-hidden="true"></canvas>
+
+    <header id="site-head" hidden>
+      <a class="skip-link" href="#journeys">Skip to the avenues</a>
+      <a class="brand brand--link" href="./index.html">SOENA</a>
+      <nav id="ways" aria-label="Avenues"></nav>
+      <div class="head-actions">
+        <button id="chat-open" type="button" title="Talk with SOENA">let’s talk</button>
+        <button id="voice-toggle" type="button" aria-pressed="false" title="Let SOENA speak aloud">voice</button>
+        <button id="memory-open" type="button" title="What SOENA remembers">memory</button>
+      </div>
+    </header>
+
+    <main id="app">
+      <section id="avenues-hero" aria-label="The avenues">
+        <h1>The Avenues</h1>
+        <p>Eight ways through — walk them in any order, at any pace. I will keep alongside.</p>
+        <noscript><p>The avenues need JavaScript to be walked with company; the words are still here without it.</p></noscript>
+      </section>
+    </main>
+
+    <div id="caption" role="status" aria-live="polite"></div>
+    <div id="overlay-root"></div>
+  </body>
+</html>

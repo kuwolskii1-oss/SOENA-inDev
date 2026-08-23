@@ -97,16 +97,24 @@ function wire(quality: Quality): void {
       character?.setHues(avenue.hues[0], avenue.hues[1]);
       const anchor = window.innerWidth < 720 ? 0 : side * 0.9;
       orb?.setAnchor(anchor);
+      orb?.setStage(1);
       character?.setAnchor(anchor * (character?.worldHalfWidth() ?? 2) * 0.52);
-      character?.setStage(false);
+      character?.setStage(1);
     } else {
-      orb?.setHues(255, 205);
-      character?.setHues(255, 205);
+      // No avenue on screen: the garden greens, and the page decides the
+      // companion's post and size (the landing keeps a small corner avatar).
+      orb?.setHues(150, 92);
+      character?.setHues(150, 92);
       const aside = parseFloat(document.body.dataset.presenceAnchor ?? '0') || 0;
-      orb?.setAnchor(window.innerWidth < 720 ? 0 : aside);
-      character?.setAnchor(window.innerWidth < 720 ? 0 : aside * (character?.worldHalfWidth() ?? 2) * 0.52);
-      // The threshold is the stage: the companion stands tall and close.
-      character?.setStage(true);
+      const scale = parseFloat(document.body.dataset.presenceScale ?? '1') || 1;
+      orb?.setAnchor(window.innerWidth < 720 ? aside * 0.6 : aside * 1.55);
+      orb?.setStage(scale < 1 ? scale * 0.75 : 1);
+      character?.setAnchor(
+        window.innerWidth < 720
+          ? aside * (character?.worldHalfWidth() ?? 2) * 0.3
+          : aside * (character?.worldHalfWidth() ?? 2) * 0.82,
+      );
+      character?.setStage(scale);
     }
     if (quality.reducedMotion) still();
   };
