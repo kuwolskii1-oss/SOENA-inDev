@@ -128,13 +128,12 @@ body {
 }
 .backdrop-fade.is-in { opacity: 1; }
 
-/* The frosted panes — a midground of vertical glass sheets between the
-   canopy and the page. Each pane diffuses at its own strength (like
-   separate panels of frosted glass) and meets its neighbour at a thin
-   catch-light seam. The overall opaqueness is the visitor-tunable
-   frost level: html[data-frost='1'..'5'], set from Developer options,
-   maps to a base blur + wash strength here in CSS. Level 3 is the
-   default and the site's tuned look. */
+/* The frosted glass — ONE continuous sheet between the canopy and the
+   page, at a single uniform strength across the whole background. The
+   visitor's frost level (html[data-frost='1'..'5'], set in Developer
+   options) picks that strength; there are no sections or seams, so the
+   diffusion never varies from one part of the page to another.
+   Level 3 is the default and the site's tuned look. */
 :root {
   --frost-blur: 12px;
   --frost-wash: 1;
@@ -144,35 +143,21 @@ body {
 html[data-frost='1'] { --frost-blur: 0px; --frost-wash: 0.55; --frost-tint: 0; }
 html[data-frost='2'] { --frost-blur: 5px; --frost-wash: 0.8; --frost-tint: 0; }
 html[data-frost='3'] { --frost-blur: 12px; --frost-wash: 1; --frost-tint: 0; }
-html[data-frost='4'] { --frost-blur: 20px; --frost-wash: 1; --frost-tint: 0.09; }
-html[data-frost='5'] { --frost-blur: 30px; --frost-wash: 1; --frost-tint: 0.2; }
+html[data-frost='4'] { --frost-blur: 20px; --frost-wash: 1; --frost-tint: 0.1; }
+html[data-frost='5'] { --frost-blur: 30px; --frost-wash: 1; --frost-tint: 0.22; }
 
-#panes {
+#glass {
   position: fixed;
   inset: 0;
   z-index: 0;
-  display: flex;
   pointer-events: none;
+  backdrop-filter: blur(calc(var(--frost-blur) * var(--frost-scale))) saturate(1.06);
+  -webkit-backdrop-filter: blur(calc(var(--frost-blur) * var(--frost-scale))) saturate(1.06);
+  background: rgba(var(--wash-bg-rgb), var(--frost-tint));
 }
-.pane {
-  height: 100%;
-  --pane-tint-rgb: var(--wash-bg-rgb);
-  backdrop-filter: blur(calc(var(--frost-blur) * var(--pane-m, 1) * var(--frost-scale))) saturate(1.06);
-  -webkit-backdrop-filter: blur(calc(var(--frost-blur) * var(--pane-m, 1) * var(--frost-scale))) saturate(1.06);
-  background: rgba(var(--pane-tint-rgb), calc(var(--frost-tint) * var(--pane-m, 1)));
-  box-shadow: inset -1px 0 0 rgba(var(--wash-bg-rgb), 0.28);
-}
-.pane:nth-child(1) { width: 24%; --pane-m: 0.55; }
-.pane:nth-child(2) { width: 30%; --pane-m: 1.2; }
-.pane:nth-child(3) { width: 24%; --pane-m: 0.8; }
-.pane:nth-child(4) { width: 22%; --pane-m: 1.4; box-shadow: none; }
-[data-theme='dark'] .pane {
-  --pane-tint-rgb: var(--wash-ink-rgb);
-  box-shadow: inset -1px 0 0 rgba(var(--wash-bg-rgb), 0.14);
-}
-[data-theme='dark'] .pane:nth-child(4) { box-shadow: none; }
+[data-theme='dark'] #glass { background: rgba(var(--wash-ink-rgb), var(--frost-tint)); }
 
-/* The wash above the panes: legibility tint + avenue hue. Its overall
+/* The wash above the glass: legibility tint + avenue hue. Its overall
    presence follows the frost level via opacity. */
 #aura {
   --aura-h1: 255;
@@ -195,8 +180,8 @@ html[data-frost='5'] { --frost-blur: 30px; --frost-wash: 1; --frost-tint: 0.2; }
 ;
 }
 
-/* Weakest tier: scale the pane blur down rather than off — the
-   frosting is the look, so modest hardware keeps it, just cheaper. */
+/* Weakest tier: scale the blur down rather than off — the frosting is
+   the look, so modest hardware keeps it, just cheaper. */
 html[data-tier='0'] { --frost-scale: 0.55; }
 
 #gl {

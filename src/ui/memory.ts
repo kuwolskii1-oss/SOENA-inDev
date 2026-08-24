@@ -27,6 +27,14 @@ export function openMemoryPanel(): void {
   const root = document.getElementById('overlay-root');
   if (!root || root.querySelector('.memory-panel')) return;
 
+  // Who opened the door: focus returns to them when it shuts (cf.
+  // drawer.ts). Only a real trigger gets aria-expanded — when the panel
+  // is opened from a chat command the active element is <body>, which
+  // must not be labelled as an expanded control.
+  const active = document.activeElement as HTMLElement | null;
+  const opener = active && active !== document.body ? active : null;
+  if (opener?.hasAttribute('aria-haspopup')) opener.setAttribute('aria-expanded', 'true');
+
   const p = loadProfile();
   const overlay = document.createElement('div');
   overlay.className = 'threshold memory-panel';
@@ -38,6 +46,12 @@ export function openMemoryPanel(): void {
 
   const close = () => {
     overlay.classList.add('is-leaving');
+    if (opener?.hasAttribute('aria-haspopup')) opener.setAttribute('aria-expanded', 'false');
+    // Focus would otherwise land on <body> and a keyboard user would
+    // restart tabbing from the top of the document. Backdrop-clicks blur
+    // to <body> before close() runs, so accept that as "still ours".
+    const held = document.activeElement;
+    if (!held || held === document.body || overlay.contains(held)) opener?.focus?.();
     window.setTimeout(() => overlay.remove(), 500);
   };
 
@@ -290,8 +304,22 @@ export function openMemoryPanel(): void {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) close();
   });
+  // A modal dialog must hold the tab ring: aria-modal only moves the AT
+  // virtual cursor, so without this Tab walks into the header and hero
+  // behind the veil — and Escape (bound here) stops reaching the panel.
   overlay.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') close();
+    if (e.key === 'Escape') return close();
+    if (e.key !== 'Tab') return;
+    const stops = [
+      ...panel.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input, select, textarea, [tabindex]',
+      ),
+    ].filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0);
+    if (!stops.length) return;
+    const edge = e.shiftKey ? stops[0] : stops[stops.length - 1];
+    if (document.activeElement !== edge) return;
+    e.preventDefault();
+    (e.shiftKey ? stops[stops.length - 1] : stops[0]).focus();
   });
   root.appendChild(overlay);
   (panel.querySelector('h2') as HTMLElement | null)?.focus();
