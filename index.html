@@ -13,42 +13,60 @@
     <style>
       /* Critical shell: paints the garden before any bundle arrives.
          The landing is one still screen — no scrolling. */
-      :root { color-scheme: light; }
-      html { background: #fbfff9; }
-      html[data-theme='dark'] { background: #04231c; color-scheme: dark; }
+      /* Palette tokens — the site's whole colour world, switchable from
+         the memory panel's developer options. Defined here as well as in
+         the bundle so the first painted frame is already in-palette.
+         The loading veil keeps ONE look per palette on purpose: it must
+         not invert when the visitor happens to be in dark mode. */
+      :root {
+        color-scheme: light;
+        --bg: #fbfff9; --ink: #04231c;
+        --wash-bg-rgb: 251, 255, 249; --wash-ink-rgb: 4, 35, 28;
+        --wash-tint-rgb: 173, 245, 188; --wash-glow-rgb: 199, 244, 84;
+        --veil-ground: #04231c; --veil-word: #fbfff9;
+        --veil-line: #c7f454; --veil-line-glow: rgba(199, 244, 84, 0.55);
+      }
+      html[data-palette='tide'] {
+        --bg: #f3e594; --ink: #011f27;
+        --wash-bg-rgb: 243, 229, 148; --wash-ink-rgb: 1, 31, 39;
+        --wash-tint-rgb: 102, 172, 145; --wash-glow-rgb: 246, 210, 133;
+        --veil-ground: #011f27; --veil-word: #f3e594;
+        --veil-line: #f6d285; --veil-line-glow: rgba(246, 210, 133, 0.55);
+      }
+      html[data-theme='dark'] { color-scheme: dark; --bg: #04231c; --ink: #fbfff9; }
+      html[data-palette='tide'][data-theme='dark'] { --bg: #011f27; --ink: #f3e594; }
+      html { background: var(--bg); }
       body {
         margin: 0;
-        background: #fbfff9;
-        color: #04231c;
+        background: var(--bg);
+        color: var(--ink);
         font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
         height: 100vh; height: 100svh;
         overflow: hidden;
       }
-      [data-theme='dark'] body { background: #04231c; color: #fbfff9; }
-      /* The ground truth of the page: the canopy overhead. A still image
-         (day or night — the endpoints of the transition timelapse), with
-         the aura as a translucent wash above it for legibility. */
+      /* The canopy overhead: the day or night still. */
       #backdrop {
         position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
-        background: #fbfff9 center / cover no-repeat url('./bg/canopy-day.webp');
+        background: var(--bg) center / cover no-repeat url('./bg/canopy-day.webp');
       }
-      [data-theme='dark'] #backdrop {
-        background-color: #04231c;
-        background-image: url('./bg/canopy-night.webp');
-      }
+      [data-theme='dark'] #backdrop { background-image: url('./bg/canopy-night.webp'); }
+      /* Frosted glass over the canopy: a real blur plus a palette-tinted
+         wash, so the leaves read as weather behind the page. */
       #aura {
         position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        backdrop-filter: blur(12px) saturate(1.06);
+        -webkit-backdrop-filter: blur(12px) saturate(1.06);
         background:
-          radial-gradient(70rem 54rem at 60% 38%, rgba(251, 255, 249, 0.58), transparent 70%),
-          radial-gradient(44rem 40rem at 22% 82%, rgba(173, 245, 188, 0.24), transparent 65%),
-          radial-gradient(34rem 30rem at 78% 18%, rgba(199, 244, 84, 0.12), transparent 60%),
-          linear-gradient(rgba(251, 255, 249, 0.4), rgba(232, 244, 233, 0.46));
+          radial-gradient(70rem 54rem at 60% 38%, rgba(var(--wash-bg-rgb), 0.5), transparent 70%),
+          radial-gradient(44rem 40rem at 22% 82%, rgba(var(--wash-tint-rgb), 0.22), transparent 65%),
+          radial-gradient(34rem 30rem at 78% 18%, rgba(var(--wash-glow-rgb), 0.12), transparent 60%),
+          linear-gradient(rgba(var(--wash-bg-rgb), 0.32), rgba(var(--wash-bg-rgb), 0.4));
       }
       [data-theme='dark'] #aura {
         background:
-          radial-gradient(70rem 54rem at 60% 38%, rgba(4, 35, 28, 0.26), transparent 70%),
-          radial-gradient(44rem 40rem at 22% 82%, rgba(4, 35, 28, 0.36), transparent 65%),
-          linear-gradient(rgba(4, 35, 28, 0.26), rgba(4, 35, 28, 0.44));
+          radial-gradient(70rem 54rem at 60% 38%, rgba(var(--wash-ink-rgb), 0.24), transparent 70%),
+          radial-gradient(44rem 40rem at 22% 82%, rgba(var(--wash-ink-rgb), 0.34), transparent 65%),
+          linear-gradient(rgba(var(--wash-ink-rgb), 0.22), rgba(var(--wash-ink-rgb), 0.4));
       }
       #boot-hero {
         position: relative; z-index: 1;
@@ -70,7 +88,7 @@
         text-wrap: balance;
       }
       #hero-chips { display: flex; flex-wrap: wrap; gap: 0.55rem; }
-      noscript p { color: rgba(4,35,28,.8); max-width: 40ch; margin: 2rem 0; }
+      noscript p { color: rgba(var(--wash-ink-rgb), .8); max-width: 40ch; margin: 2rem 0; }
       /* The arrival veil — the door, closed for one breath. Painted from
          this critical CSS so it is there on the very first frame, shown
          only when JS runs (html.has-arrival), lifted by the app once the
@@ -78,11 +96,11 @@
       #arrival {
         position: fixed; inset: 0; z-index: 120;
         display: none; flex-direction: column; align-items: center; justify-content: center;
-        background: #04231c;
+        background: var(--veil-ground);
       }
       .has-arrival #arrival { display: flex; }
       .arrival-word {
-        margin: 0; color: #fbfff9;
+        margin: 0; color: var(--veil-word);
         font-family: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
         font-weight: 480; font-size: clamp(1.9rem, 5.4vw, 3.1rem);
         letter-spacing: 0.32em; text-indent: 0.32em;
@@ -98,8 +116,8 @@
       #arrival.is-lit .arrival-word span:nth-child(5) { transition-delay: 240ms; }
       .arrival-line {
         width: min(9rem, 30vw); height: 2px; margin-top: 1.4rem;
-        background: #c7f454; border-radius: 2px;
-        box-shadow: 0 0 18px rgba(199, 244, 84, 0.55);
+        background: var(--veil-line); border-radius: 2px;
+        box-shadow: 0 0 18px var(--veil-line-glow);
         transform: scaleX(0);
         transition: transform 1s cubic-bezier(0.22, 1, 0.36, 1) 0.12s;
       }
@@ -122,6 +140,8 @@
       try {
         if (localStorage.getItem('soena.theme.v1') === 'dark')
           document.documentElement.dataset.theme = 'dark';
+        var p = localStorage.getItem('soena.palette.v1');
+        if (p) document.documentElement.dataset.palette = p;
       } catch (e) {}
       // Gate the veil on JS actually running, so a scriptless visitor never
       // faces a closed door; and lift it after 4s even if the app never
