@@ -24,7 +24,7 @@
 :root {
   --ink: #04231c;
   --ink-dim: rgba(4, 35, 28, 0.66);
-  --ink-faint: rgba(4, 35, 28, 0.42);
+  --ink-faint: rgba(4, 35, 28, 0.61);
   --bg: #fbfff9;
   --frost: rgba(255, 255, 255, 0.66);
   --veil: rgba(4, 35, 28, 0.13);
@@ -32,6 +32,7 @@
   --accent: #377b42;
   --accent-deep: #134623;
   --accent-teal: #196966;
+  --accent-hover: #196966;
   --mint: #c4f6c5;
   --mint-soft: #adf5bc;
   --lime: #c7f454;
@@ -59,7 +60,7 @@
 html[data-palette='tide'] {
   --ink: #011f27;
   --ink-dim: rgba(1, 31, 39, 0.68);
-  --ink-faint: rgba(1, 31, 39, 0.44);
+  --ink-faint: rgba(1, 31, 39, 0.62);
   --bg: #e9f1ef;
   --frost: rgba(255, 255, 255, 0.6);
   --veil: rgba(1, 31, 39, 0.16);
@@ -67,6 +68,7 @@ html[data-palette='tide'] {
   --accent: #086d6d;
   --accent-deep: #053e44;
   --accent-teal: #19827c;
+  --accent-hover: #0d5a57;
   --mint: #f3e594;
   --mint-soft: #66ac91;
   --lime: #f6d285;
@@ -146,13 +148,20 @@ html[data-frost='3'] { --frost-blur: 12px; --frost-wash: 1; --frost-tint: 0; }
 html[data-frost='4'] { --frost-blur: 20px; --frost-wash: 1; --frost-tint: 0.1; }
 html[data-frost='5'] { --frost-blur: 30px; --frost-wash: 1; --frost-tint: 0.22; }
 
+/* The blur lives on the canopy itself, not as a backdrop-filter above
+   it: a filter on a static image is composited once and cached, while
+   backdrop-filter re-samples the whole viewport every frame (measured
+   59->24 fps while scrolling). The slight scale pushes the filter's
+   soft edges off-screen. #glass then carries only the level's tint. */
+#backdrop {
+  filter: blur(calc(var(--frost-blur) * var(--frost-scale))) saturate(1.06);
+  transform: scale(1.08);
+}
 #glass {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  backdrop-filter: blur(calc(var(--frost-blur) * var(--frost-scale))) saturate(1.06);
-  -webkit-backdrop-filter: blur(calc(var(--frost-blur) * var(--frost-scale))) saturate(1.06);
   background: rgba(var(--wash-bg-rgb), var(--frost-tint));
 }
 [data-theme='dark'] #glass { background: rgba(var(--wash-ink-rgb), var(--frost-tint)); }
@@ -504,7 +513,7 @@ main, header, footer { position: relative; z-index: 2; }
   border: 1px solid var(--accent-deep);
   color: var(--mint);
 }
-.btn--primary:hover, .btn--primary:focus-visible { background: var(--accent-teal); border-color: var(--accent-teal); }
+.btn--primary:hover, .btn--primary:focus-visible { background: var(--accent-hover); border-color: var(--accent-hover); }
 .btn--ghost {
   background: transparent;
   border: 1px solid var(--veil);
@@ -540,7 +549,7 @@ main, header, footer { position: relative; z-index: 2; }
   height: 72px;
   border-radius: 50%;
   border: 1px solid var(--veil-strong);
-  background: radial-gradient(circle, rgba(173, 245, 188, 0.55), transparent 70%);
+  background: radial-gradient(circle, rgba(var(--wash-tint-rgb), 0.55), transparent 70%);
   transform: scale(0.72);
   transition: transform 4s cubic-bezier(0.45, 0, 0.55, 1);
 }
@@ -892,7 +901,7 @@ select.threshold-input option { background: var(--bg); color: var(--ink); }
 .chat-msg--you {
   align-self: flex-end;
   background: var(--accent-soft);
-  border: 1px solid rgba(124, 108, 255, 0.35);
+  border: 1px solid var(--veil-strong);
   color: var(--ink);
   border-bottom-right-radius: 0.25rem;
 }
@@ -944,8 +953,8 @@ select.threshold-input option { background: var(--bg); color: var(--ink); }
   animation: spotlight 1.3s ease-in-out infinite;
 }
 @keyframes spotlight {
-  0%, 100% { outline-color: rgba(55, 123, 66, 0.95); box-shadow: 0 0 0 0 rgba(199, 244, 84, 0.45); }
-  50% { outline-color: rgba(19, 105, 102, 0.9); box-shadow: 0 0 22px 5px rgba(199, 244, 84, 0.4); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--wash-glow-rgb), 0.45); }
+  50% { box-shadow: 0 0 22px 5px rgba(var(--wash-glow-rgb), 0.4); }
 }
 
 /* ---------------------------------------------------------------
@@ -1305,6 +1314,12 @@ html.arrival-done #arrival {
   transition: transform 0.85s var(--ease);
 }
 
+/* Forced colours flatten the veil to Canvas/CanvasText, which would
+   paint the light-line the same colour as the ground it sits on. */
+@media (forced-colors: active) {
+  .arrival-line { forced-color-adjust: none; background: Highlight; box-shadow: none; }
+}
+
 /* The entrance underneath: held while the veil is down, released in a
    stagger the moment the lift begins, so the page is alive mid-reveal. */
 html.has-arrival .hero-brand,
@@ -1367,7 +1382,7 @@ html[data-theme='dark'] {
   color-scheme: dark;
   --ink: #fbfff9;
   --ink-dim: rgba(251, 255, 249, 0.72);
-  --ink-faint: rgba(251, 255, 249, 0.48);
+  --ink-faint: rgba(251, 255, 249, 0.6);
   --bg: #04231c;
   --frost: rgba(7, 40, 33, 0.72);
   --veil: rgba(251, 255, 249, 0.18);
@@ -1375,6 +1390,7 @@ html[data-theme='dark'] {
   --accent: #adf5bc;
   --accent-deep: #134623;
   --accent-teal: #1d7a76;
+  --accent-hover: #1d7a76;
   --mint: #c4f6c5;
   --mint-soft: #adf5bc;
   --lime: #c7f454;
@@ -1388,7 +1404,7 @@ html[data-palette='tide'][data-theme='dark'] {
   color-scheme: dark;
   --ink: #e9f1ef;
   --ink-dim: rgba(233, 241, 239, 0.74);
-  --ink-faint: rgba(233, 241, 239, 0.5);
+  --ink-faint: rgba(233, 241, 239, 0.62);
   --bg: #011f27;
   --frost: rgba(5, 62, 68, 0.72);
   --veil: rgba(233, 241, 239, 0.2);
@@ -1396,6 +1412,7 @@ html[data-palette='tide'][data-theme='dark'] {
   --accent: #66ac91;
   --accent-deep: #053e44;
   --accent-teal: #19827c;
+  --accent-hover: #0d5a57;
   --mint: #f3e594;
   --mint-soft: #66ac91;
   --lime: #f6d285;
@@ -1420,23 +1437,19 @@ html[data-palette='tide'][data-theme='dark'] {
 [data-theme='dark'] .chat { background: rgba(var(--wash-ink-rgb), 0.94); }
 
 /* One short breath where every surface may move together: added around
-   the token flip, removed right after, so the interface dims as one. */
+   the token flip, removed right after, so the interface dims as one.
+   Longhands only, and never over elements that own a transition of
+   their own (#aura's wash, .threshold's leave fade, the arrival veil) —
+   the transition shorthand would replace their transition-property. */
 html.theme-shift body,
 html.theme-shift #site-head,
-html.theme-shift #aura,
 html.theme-shift .btn,
 html.theme-shift a,
-html.theme-shift p,
 html.theme-shift h1, html.theme-shift h2, html.theme-shift h3,
-html.theme-shift span,
 html.theme-shift input, html.theme-shift select, html.theme-shift textarea,
 html.theme-shift .drawer,
-html.theme-shift .threshold,
 html.theme-shift svg {
-  transition:
-    background-color 0.55s linear,
-    color 0.55s linear,
-    border-color 0.55s linear,
-    fill 0.55s linear,
-    stroke 0.55s linear !important;
+  transition-property: background-color, color, border-color, fill, stroke;
+  transition-duration: 0.55s;
+  transition-timing-function: linear;
 }

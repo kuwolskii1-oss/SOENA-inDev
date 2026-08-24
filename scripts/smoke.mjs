@@ -54,7 +54,8 @@ results.arrivalVisibleAtLoad = await page.locator('#arrival').isVisible();
 const veilLook = await page.evaluate(() => {
   const v = getComputedStyle(document.getElementById('arrival'));
   const w = getComputedStyle(document.querySelector('.arrival-word'));
-  return `${v.backgroundColor}|${w.color}`;
+  const l = getComputedStyle(document.querySelector('.arrival-line'));
+  return `${v.backgroundColor}|${w.color}|${l.backgroundColor}|${l.boxShadow}|${v.opacity}`;
 });
 results.veilLook = veilLook;
 results.arrivalLetters = await page.locator('#arrival .arrival-word span').count();
@@ -65,11 +66,12 @@ results.arrivalGone = (await page.locator('#arrival').count()) === 0;
 results.heroRevealed = await page.evaluate(
   () => getComputedStyle(document.getElementById('hero-line')).opacity,
 );
-// The frosted glass: ONE continuous sheet at a single uniform strength
-// over the whole background — no sections, no per-region variation.
+// The frosted glass: ONE uniform strength over the whole background —
+// no sections. The blur lives on the canopy itself (a cached filter,
+// not a per-frame backdrop-filter), with #glass carrying the tint.
 results.glass = await page.evaluate(() => {
   const layers = [...document.querySelectorAll('#glass')];
-  const f = layers[0] ? getComputedStyle(layers[0]).backdropFilter : 'none';
+  const f = getComputedStyle(document.getElementById('backdrop')).filter;
   const px = Number((f.match(/blur\((\d+(?:\.\d+)?)/) ?? [0, 0])[1]);
   const tier = document.documentElement.dataset.tier;
   const floor = tier === '0' ? 3 : 6;
@@ -78,6 +80,8 @@ results.glass = await page.evaluate(() => {
     layers: layers.length,
     sections: document.querySelectorAll('#panes, .pane').length,
     blur: Math.round(px * 10) / 10,
+    // Cheaper than backdrop-filter: the viewport is not re-blurred per frame.
+    liveBackdropFilter: getComputedStyle(layers[0] ?? document.body).backdropFilter,
     coversViewport:
       !!rect && Math.round(rect.width) === window.innerWidth && Math.round(rect.height) === window.innerHeight,
     ok: layers.length === 1 && px >= floor,
@@ -178,6 +182,19 @@ results.dialogTrapsTab = await page.evaluate(() => {
   return stops.length > 1;
 });
 results.openerExpanded = await page.locator('#memory-open').getAttribute('aria-expanded');
+results.tabpanelsLabelled = await page.evaluate(() =>
+  [...document.querySelectorAll('.memory-sheet [role=tabpanel]')].every((p) => {
+    const id = p.getAttribute('aria-labelledby');
+    return id && document.getElementById(id)?.getAttribute('role') === 'tab';
+  }),
+);
+// Escape from a click on inert copy inside the sheet (activeElement -> body).
+await page.locator('.memory-note').first().click();
+await page.keyboard.press('Escape');
+await page.waitForTimeout(700);
+results.escapeFromInertArea = (await page.locator('.memory-sheet').count()) === 0;
+await page.locator('#memory-open').click();
+await page.waitForTimeout(800);
 results.applyPresent = (await page.locator('#memory-apply').count()) === 1;
 // Regression: every memory control must carry an accessible name — the
 // label has to be tied to it, not merely sitting next to it.
@@ -240,18 +257,34 @@ results.paletteSwitched = await page.evaluate(() => {
   };
 });
 results.paletteChangedInk = inkBefore !== results.paletteSwitched.ink;
+results.tideNoGardenLeak = await page.evaluate(() => {
+  const cs = getComputedStyle(document.documentElement);
+  const glow = cs.getPropertyValue('--wash-glow-rgb').trim();
+  const tint = cs.getPropertyValue('--wash-tint-rgb').trim();
+  return {
+    glow,
+    tint,
+    // Garden's lime/mint must not survive into tide.
+    clean: glow !== '199, 244, 84' && tint !== '173, 245, 188',
+  };
+});
+results.chromeFollowsGround = await page.evaluate(() => {
+  const meta = document.querySelector('meta[name=theme-color]')?.content?.trim();
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  return meta === bg;
+});
 await page.screenshot({ path: 'scripts/.shots/shot-tide.png' });
 // Frosting: the 5-step glass toggle — switch to Veiled, confirm the
 // attribute + storage + a real blur increase; then back to default.
 results.frostSteps = await page.getByRole('radio', { name: /clear|sheer|frosted|misted|veiled/i }).count();
 const blurAt3 = await page.evaluate(() => {
-  const f = getComputedStyle(document.getElementById('glass')).backdropFilter;
+  const f = getComputedStyle(document.getElementById('backdrop')).filter;
   return Number((f.match(/blur\((\d+(?:\.\d+)?)/) ?? [0, 0])[1]);
 });
 await page.getByRole('radio', { name: 'Veiled' }).click();
 await page.waitForTimeout(300);
 results.frostVeiled = await page.evaluate((prev) => {
-  const f = getComputedStyle(document.getElementById('glass')).backdropFilter;
+  const f = getComputedStyle(document.getElementById('backdrop')).filter;
   const px = Number((f.match(/blur\((\d+(?:\.\d+)?)/) ?? [0, 0])[1]);
   return {
     attr: document.documentElement.dataset.frost,
@@ -397,8 +430,9 @@ await darkPage.waitForSelector('#arrival', { timeout: 5000 });
 const darkVeil = await darkPage.evaluate(() => {
   const v = getComputedStyle(document.getElementById('arrival'));
   const w = getComputedStyle(document.querySelector('.arrival-word'));
+  const l = getComputedStyle(document.querySelector('.arrival-line'));
   return {
-    look: `${v.backgroundColor}|${w.color}`,
+    look: `${v.backgroundColor}|${w.color}|${l.backgroundColor}|${l.boxShadow}|${v.opacity}`,
     theme: document.documentElement.dataset.theme,
   };
 });
