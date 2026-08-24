@@ -21,6 +21,32 @@ export interface Palette {
 const KEY = 'soena.palette.v1';
 const FROST_KEY = 'soena.frost.v1';
 
+/* The theme flip and the palette switch share one transition class. Both
+   used to schedule a bare 700ms removal, so whichever fired first cut the
+   other's transition short. Count the holders instead. */
+let shiftHolders = 0;
+
+/** Hold the shared 'theme-shift' class for one transition. */
+export function holdThemeShift(ms = 700): void {
+  const html = document.documentElement;
+  shiftHolders += 1;
+  html.classList.add('theme-shift');
+  window.setTimeout(() => {
+    shiftHolders -= 1;
+    if (shiftHolders <= 0) {
+      shiftHolders = 0;
+      html.classList.remove('theme-shift');
+    }
+  }, ms);
+}
+
+/** Keep the mobile browser chrome on the current ground. Reads the
+ *  resolved token, so it needs no per-palette colour table. */
+export function syncThemeColor(): void {
+  const m = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (m) m.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+}
+
 export const PALETTES: Palette[] = [
   {
     id: 'garden',
@@ -45,10 +71,10 @@ export function applyPalette(id: string): void {
   const known = PALETTES.some((p) => p.id === id) ? id : 'garden';
   const html = document.documentElement;
   // Reuse the theme flip's transition so every surface moves together.
-  html.classList.add('theme-shift');
+  holdThemeShift();
   if (known === 'garden') delete html.dataset.palette;
   else html.dataset.palette = known;
-  window.setTimeout(() => html.classList.remove('theme-shift'), 700);
+  syncThemeColor();
   try {
     if (known === 'garden') localStorage.removeItem(KEY);
     else localStorage.setItem(KEY, known);

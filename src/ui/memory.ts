@@ -44,7 +44,12 @@ export function openMemoryPanel(): void {
   // Wheel inside the panel must scroll the panel, not the Lenis page.
   overlay.setAttribute('data-lenis-prevent', '');
 
+  const onDocKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') close();
+  };
+
   const close = () => {
+    document.removeEventListener('keydown', onDocKey);
     overlay.classList.add('is-leaving');
     if (opener?.hasAttribute('aria-haspopup')) opener.setAttribute('aria-expanded', 'false');
     // Focus would otherwise land on <body> and a keyboard user would
@@ -66,10 +71,12 @@ export function openMemoryPanel(): void {
   const memPane = document.createElement('div');
   memPane.id = 'memory-pane';
   memPane.setAttribute('role', 'tabpanel');
+  memPane.setAttribute('aria-labelledby', 'memory-tab');
   memPane.setAttribute('tabindex', '0');
   const devPane = document.createElement('div');
   devPane.id = 'developer-pane';
   devPane.setAttribute('role', 'tabpanel');
+  devPane.setAttribute('aria-labelledby', 'developer-tab');
   devPane.setAttribute('tabindex', '0');
   devPane.hidden = true;
   const tabButtons: HTMLButtonElement[] = [];
@@ -94,6 +101,7 @@ export function openMemoryPanel(): void {
     b.type = 'button';
     b.className = 'panel-tab';
     b.dataset.tab = id;
+    b.id = `${id}-tab`;
     b.setAttribute('role', 'tab');
     b.setAttribute('aria-controls', `${id}-pane`);
     b.textContent = label;
@@ -322,6 +330,9 @@ export function openMemoryPanel(): void {
     (e.shiftKey ? stops[stops.length - 1] : stops[0]).focus();
   });
   root.appendChild(overlay);
+  // Escape is bound at the document: clicking a paragraph inside the
+  // sheet blurs to <body>, and a keydown there never reaches the overlay.
+  document.addEventListener('keydown', onDocKey);
   (panel.querySelector('h2') as HTMLElement | null)?.focus();
   speakMemoryOpened();
 }
@@ -391,6 +402,9 @@ function buildDeveloperPane(pane: HTMLElement, close: () => void): void {
     options.push(b);
     group.appendChild(b);
   }
+  // An unknown stored id would leave every option at tabIndex -1, making
+  // the group unreachable by keyboard: always keep one tab stop.
+  if (!options.some((o) => o.tabIndex === 0) && options[0]) options[0].tabIndex = 0;
 
   wrap.append(label, group);
   pane.appendChild(wrap);
@@ -438,6 +452,7 @@ function buildDeveloperPane(pane: HTMLElement, close: () => void): void {
     fOptions.push(b);
     fGroup.appendChild(b);
   }
+  if (!fOptions.some((o) => o.tabIndex === 0) && fOptions[0]) fOptions[0].tabIndex = 0;
   fWrap.append(fLabel, fGroup);
   pane.appendChild(fWrap);
 

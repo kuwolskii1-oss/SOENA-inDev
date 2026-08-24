@@ -23,6 +23,7 @@
  *     (opacity only, no motion) is used from the start.
  */
 import { iconSvg } from './icons';
+import { holdThemeShift, syncThemeColor } from './palette';
 import { say } from '../companion/dialogue';
 
 type Theme = 'light' | 'dark';
@@ -96,10 +97,11 @@ export function initTheme(): void {
  *  global color transition so every surface moves together. */
 function applyTheme(t: Theme): void {
   const html = document.documentElement;
-  html.classList.add('theme-shift');
+  // Shared with the palette switch — counted, so neither cuts the other short.
+  holdThemeShift();
   if (t === 'dark') html.dataset.theme = 'dark';
   else delete html.dataset.theme;
-  window.setTimeout(() => html.classList.remove('theme-shift'), 700);
+  syncThemeColor();
   try {
     localStorage.setItem(KEY, t);
   } catch {
