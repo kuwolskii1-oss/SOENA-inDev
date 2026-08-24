@@ -45,12 +45,35 @@
         background: var(--bg) center / cover no-repeat url('./bg/canopy-day.webp');
       }
       [data-theme='dark'] #backdrop { background-image: url('./bg/canopy-night.webp'); }
-      /* Frosted glass over the canopy: a real blur plus a palette-tinted
-         wash, so the leaves read as weather behind the page. */
+      /* Frosted panes: vertical glass sheets between canopy and page.
+         Opaqueness is the visitor's frost level (Developer options). */
+      :root { --frost-blur: 12px; --frost-wash: 1; --frost-tint: 0; --frost-scale: 1; }
+      html[data-frost='1'] { --frost-blur: 0px; --frost-wash: 0.55; --frost-tint: 0; }
+      html[data-frost='2'] { --frost-blur: 5px; --frost-wash: 0.8; --frost-tint: 0; }
+      html[data-frost='4'] { --frost-blur: 20px; --frost-tint: 0.09; }
+      html[data-frost='5'] { --frost-blur: 30px; --frost-tint: 0.2; }
+      #panes { position: fixed; inset: 0; z-index: 0; display: flex; pointer-events: none; }
+      .pane {
+        height: 100%;
+        --pane-tint-rgb: var(--wash-bg-rgb);
+        backdrop-filter: blur(calc(var(--frost-blur) * var(--pane-m, 1) * var(--frost-scale))) saturate(1.06);
+        -webkit-backdrop-filter: blur(calc(var(--frost-blur) * var(--pane-m, 1) * var(--frost-scale))) saturate(1.06);
+        background: rgba(var(--pane-tint-rgb), calc(var(--frost-tint) * var(--pane-m, 1)));
+        box-shadow: inset -1px 0 0 rgba(var(--wash-bg-rgb), 0.28);
+      }
+      .pane:nth-child(1) { width: 24%; --pane-m: 0.55; }
+      .pane:nth-child(2) { width: 30%; --pane-m: 1.2; }
+      .pane:nth-child(3) { width: 24%; --pane-m: 0.8; }
+      .pane:nth-child(4) { width: 22%; --pane-m: 1.4; box-shadow: none; }
+      [data-theme='dark'] .pane {
+        --pane-tint-rgb: var(--wash-ink-rgb);
+        box-shadow: inset -1px 0 0 rgba(var(--wash-bg-rgb), 0.14);
+      }
+      [data-theme='dark'] .pane:nth-child(4) { box-shadow: none; }
+      /* The wash above the panes: legibility tint, following the level. */
       #aura {
         position: fixed; inset: 0; z-index: 0; pointer-events: none;
-        backdrop-filter: blur(12px) saturate(1.06);
-        -webkit-backdrop-filter: blur(12px) saturate(1.06);
+        opacity: min(1, var(--frost-wash));
         background:
           radial-gradient(70rem 54rem at 60% 38%, rgba(var(--wash-bg-rgb), 0.5), transparent 70%),
           radial-gradient(44rem 40rem at 22% 82%, rgba(var(--wash-tint-rgb), 0.22), transparent 65%),
@@ -116,6 +139,8 @@
           document.documentElement.dataset.theme = 'dark';
         var p = localStorage.getItem('soena.palette.v1');
         if (p) document.documentElement.dataset.palette = p;
+        var f = localStorage.getItem('soena.frost.v1');
+        if (f) document.documentElement.dataset.frost = f;
       } catch (e) {}
       // Veil only when JS runs; failsafe lift at 4s if the app never boots.
       document.documentElement.classList.add('has-arrival');
@@ -131,6 +156,7 @@
       <span class="arrival-line"></span>
     </div>
     <div id="backdrop" aria-hidden="true"></div>
+    <div id="panes" aria-hidden="true"><span class="pane"></span><span class="pane"></span><span class="pane"></span><span class="pane"></span></div>
     <div id="aura" aria-hidden="true"></div>
     <canvas id="gl" aria-hidden="true"></canvas>
 

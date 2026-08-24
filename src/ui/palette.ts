@@ -19,6 +19,7 @@ export interface Palette {
 }
 
 const KEY = 'soena.palette.v1';
+const FROST_KEY = 'soena.frost.v1';
 
 export const PALETTES: Palette[] = [
   {
@@ -51,6 +52,42 @@ export function applyPalette(id: string): void {
   try {
     if (known === 'garden') localStorage.removeItem(KEY);
     else localStorage.setItem(KEY, known);
+  } catch {
+    /* private mode: the choice just won't survive the session */
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Frosting — how opaque the glass panes over the canopy are.          */
+/* ------------------------------------------------------------------ */
+
+export interface FrostLevel {
+  id: string; // '1'..'5', stored and written to html[data-frost]
+  label: string;
+}
+
+/** Five steps of glass, clear to near-opaque. Level 3 is the default
+ *  and matches the site's tuned look; the blur/wash each level maps to
+ *  lives entirely in CSS (html[data-frost] blocks). */
+export const FROST_LEVELS: FrostLevel[] = [
+  { id: '1', label: 'Clear' },
+  { id: '2', label: 'Sheer' },
+  { id: '3', label: 'Frosted' },
+  { id: '4', label: 'Misted' },
+  { id: '5', label: 'Veiled' },
+];
+
+export function currentFrost(): string {
+  return document.documentElement.dataset.frost || '3';
+}
+
+/** Apply a frost level immediately and remember it for the next visit. */
+export function applyFrost(id: string): void {
+  const known = FROST_LEVELS.some((l) => l.id === id) ? id : '3';
+  document.documentElement.dataset.frost = known;
+  try {
+    if (known === '3') localStorage.removeItem(FROST_KEY);
+    else localStorage.setItem(FROST_KEY, known);
   } catch {
     /* private mode: the choice just won't survive the session */
   }

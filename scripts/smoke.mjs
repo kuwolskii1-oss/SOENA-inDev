@@ -61,13 +61,21 @@ results.arrivalGone = (await page.locator('#arrival').count()) === 0;
 results.heroRevealed = await page.evaluate(
   () => getComputedStyle(document.getElementById('hero-line')).opacity,
 );
-// The frosted haze: a real backdrop blur over the canopy. The weakest
-// quality tier gets a cheaper radius, so the floor is tier-aware.
-results.auraFrosted = await page.evaluate(() => {
-  const f = getComputedStyle(document.getElementById('aura')).backdropFilter;
-  const px = Number((f.match(/blur\((\d+)/) ?? [0, 0])[1]);
-  const floor = document.documentElement.dataset.tier === '0' ? 8 : 12;
-  return { px, tier: document.documentElement.dataset.tier, ok: px >= floor };
+// The frosted panes: four glass sheets, each with its OWN blur strength
+// (that's what makes them read as separate panes), tier-aware floor.
+results.panes = await page.evaluate(() => {
+  const blurs = [...document.querySelectorAll('#panes .pane')].map((el) => {
+    const f = getComputedStyle(el).backdropFilter;
+    return Number((f.match(/blur\((\d+(?:\.\d+)?)/) ?? [0, 0])[1]);
+  });
+  const tier = document.documentElement.dataset.tier;
+  const floor = tier === '0' ? 3 : 6;
+  return {
+    count: blurs.length,
+    blurs: blurs.map((b) => Math.round(b * 10) / 10),
+    distinct: new Set(blurs.map((b) => Math.round(b))).size >= 3,
+    ok: blurs.length === 4 && Math.max(...blurs) >= floor,
+  };
 });
 results.title = await page.title();
 results.onboardingVisible = await page.locator('.threshold-panel').isVisible();
@@ -217,6 +225,30 @@ results.paletteSwitched = await page.evaluate(() => {
 });
 results.paletteChangedInk = inkBefore !== results.paletteSwitched.ink;
 await page.screenshot({ path: 'scripts/.shots/shot-tide.png' });
+// Frosting: the 5-step glass toggle — switch to Veiled, confirm the
+// attribute + storage + a real blur increase; then back to default.
+results.frostSteps = await page.getByRole('radio', { name: /clear|sheer|frosted|misted|veiled/i }).count();
+const blurAt3 = await page.evaluate(() => {
+  const f = getComputedStyle(document.querySelector('#panes .pane:nth-child(2)')).backdropFilter;
+  return Number((f.match(/blur\((\d+(?:\.\d+)?)/) ?? [0, 0])[1]);
+});
+await page.getByRole('radio', { name: 'Veiled' }).click();
+await page.waitForTimeout(300);
+results.frostVeiled = await page.evaluate((prev) => {
+  const f = getComputedStyle(document.querySelector('#panes .pane:nth-child(2)')).backdropFilter;
+  const px = Number((f.match(/blur\((\d+(?:\.\d+)?)/) ?? [0, 0])[1]);
+  return {
+    attr: document.documentElement.dataset.frost,
+    stored: localStorage.getItem('soena.frost.v1'),
+    blurGrew: px > prev,
+  };
+}, blurAt3);
+await page.getByRole('radio', { name: 'Frosted' }).click();
+await page.waitForTimeout(300);
+results.frostBackToDefault = await page.evaluate(
+  () => (document.documentElement.dataset.frost ?? '3') + '/' + String(localStorage.getItem('soena.frost.v1')),
+);
+
 // The developer drawer carries its own footer (Apply/Cancel/Erase are
 // memory's and stay hidden here).
 results.devFooterOwn = await page.evaluate(() => {
