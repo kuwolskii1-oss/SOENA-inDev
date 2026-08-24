@@ -24,14 +24,14 @@ export const PALETTES: Palette[] = [
   {
     id: 'garden',
     label: 'Garden',
-    note: 'Off-white ground, forest ink, living green. The default world.',
-    swatches: ['#fbfff9', '#c7f454', '#adf5bc', '#377b42', '#196966', '#04231c'],
+    note: 'Greens carry it — off-white ground, forest ink. Lime is the accent.',
+    swatches: ['#fbfff9', '#adf5bc', '#377b42', '#196966', '#04231c', '#c7f454'],
   },
   {
     id: 'tide',
     label: 'Tide',
-    note: 'Sand and teal — deep water under a warm sky.',
-    swatches: ['#f3e594', '#f6d285', '#66ac91', '#19827c', '#086d6d', '#011f27'],
+    note: 'Deep water carries it — teal and navy. Gold is the accent.',
+    swatches: ['#e9f1ef', '#66ac91', '#19827c', '#086d6d', '#011f27', '#f6d285'],
   },
 ];
 

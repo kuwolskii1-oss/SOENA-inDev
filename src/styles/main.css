@@ -51,29 +51,33 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Tide — the second world. Light. */
+/* Tide — the second world. The teals carry it: deep water is the
+   ground and the structure, and the golds appear only as accents (the
+   glow line, a primary button's label, the light through the leaves).
+   The palette has no near-white, so light mode's paper is a pale tint
+   of its own teal rather than the pale gold. */
 html[data-palette='tide'] {
   --ink: #011f27;
   --ink-dim: rgba(1, 31, 39, 0.68);
   --ink-faint: rgba(1, 31, 39, 0.44);
-  --bg: #f3e594;
-  --frost: rgba(246, 210, 133, 0.62);
+  --bg: #e9f1ef;
+  --frost: rgba(255, 255, 255, 0.6);
   --veil: rgba(1, 31, 39, 0.16);
   --veil-strong: rgba(1, 31, 39, 0.3);
   --accent: #086d6d;
   --accent-deep: #053e44;
   --accent-teal: #19827c;
-  --mint: #f6d285;
+  --mint: #f3e594;
   --mint-soft: #66ac91;
   --lime: #f6d285;
-  --accent-soft: rgba(8, 109, 109, 0.14);
+  --accent-soft: rgba(8, 109, 109, 0.13);
   --danger: #b3402f;
-  --wash-bg-rgb: 243, 229, 148;
+  --wash-bg-rgb: 233, 241, 239;
   --wash-ink-rgb: 1, 31, 39;
   --wash-tint-rgb: 102, 172, 145;
   --wash-glow-rgb: 246, 210, 133;
   --veil-ground: #011f27;
-  --veil-word: #f3e594;
+  --veil-word: #e9f1ef;
   --veil-line: #f6d285;
   --veil-line-glow: rgba(246, 210, 133, 0.55);
 }
@@ -1319,13 +1323,13 @@ html[data-theme='dark'] {
    block, so every token that differs must be restated here. */
 html[data-palette='tide'][data-theme='dark'] {
   color-scheme: dark;
-  --ink: #f3e594;
-  --ink-dim: rgba(243, 229, 148, 0.74);
-  --ink-faint: rgba(243, 229, 148, 0.5);
+  --ink: #e9f1ef;
+  --ink-dim: rgba(233, 241, 239, 0.74);
+  --ink-faint: rgba(233, 241, 239, 0.5);
   --bg: #011f27;
   --frost: rgba(5, 62, 68, 0.72);
-  --veil: rgba(243, 229, 148, 0.2);
-  --veil-strong: rgba(243, 229, 148, 0.36);
+  --veil: rgba(233, 241, 239, 0.2);
+  --veil-strong: rgba(233, 241, 239, 0.36);
   --accent: #66ac91;
   --accent-deep: #053e44;
   --accent-teal: #19827c;
