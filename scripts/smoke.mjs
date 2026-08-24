@@ -7,6 +7,10 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
 const DIST = new URL('../dist', import.meta.url).pathname;
+// Port is overridable so concurrent runs (e.g. a review agent's own
+// pass) cannot collide on a single fixed port.
+const PORT = Number(process.env.SMOKE_PORT ?? 4173);
+const ORIGIN = `http://localhost:${PORT}`;
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.webp': 'image/webp', '.webm': 'video/webm', '.mp4': 'video/mp4' };
 
 const server = createServer((req, res) => {
@@ -17,7 +21,7 @@ const server = createServer((req, res) => {
   res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream' });
   res.end(readFileSync(file));
 });
-await new Promise((r) => server.listen(4173, r));
+await new Promise((r) => server.listen(PORT, r));
 
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
@@ -40,7 +44,7 @@ const arrived = () =>
     timeout: 9000,
   });
 
-await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
+await page.goto(ORIGIN + '/', { waitUntil: 'networkidle' });
 
 const results = {};
 // The arrival veil must be up right after load (min hold ~1.25s)…
@@ -61,20 +65,22 @@ results.arrivalGone = (await page.locator('#arrival').count()) === 0;
 results.heroRevealed = await page.evaluate(
   () => getComputedStyle(document.getElementById('hero-line')).opacity,
 );
-// The frosted panes: four glass sheets, each with its OWN blur strength
-// (that's what makes them read as separate panes), tier-aware floor.
-results.panes = await page.evaluate(() => {
-  const blurs = [...document.querySelectorAll('#panes .pane')].map((el) => {
-    const f = getComputedStyle(el).backdropFilter;
-    return Number((f.match(/blur\((\d+(?:\.\d+)?)/) ?? [0, 0])[1]);
-  });
+// The frosted glass: ONE continuous sheet at a single uniform strength
+// over the whole background — no sections, no per-region variation.
+results.glass = await page.evaluate(() => {
+  const layers = [...document.querySelectorAll('#glass')];
+  const f = layers[0] ? getComputedStyle(layers[0]).backdropFilter : 'none';
+  const px = Number((f.match(/blur\((\d+(?:\.\d+)?)/) ?? [0, 0])[1]);
   const tier = document.documentElement.dataset.tier;
   const floor = tier === '0' ? 3 : 6;
+  const rect = layers[0]?.getBoundingClientRect();
   return {
-    count: blurs.length,
-    blurs: blurs.map((b) => Math.round(b * 10) / 10),
-    distinct: new Set(blurs.map((b) => Math.round(b))).size >= 3,
-    ok: blurs.length === 4 && Math.max(...blurs) >= floor,
+    layers: layers.length,
+    sections: document.querySelectorAll('#panes, .pane').length,
+    blur: Math.round(px * 10) / 10,
+    coversViewport:
+      !!rect && Math.round(rect.width) === window.innerWidth && Math.round(rect.height) === window.innerHeight,
+    ok: layers.length === 1 && px >= floor,
   };
 });
 results.title = await page.title();
@@ -164,6 +170,14 @@ await page.waitForTimeout(600);
 await page.locator('#memory-open').click();
 await page.waitForTimeout(900);
 results.memoryPanel = await page.locator('#memory-pane h2').textContent();
+// The panel is a modal dialog: Tab must cycle inside it, and closing
+// must hand focus back to the control that opened it.
+results.dialogTrapsTab = await page.evaluate(() => {
+  const stops = [...document.querySelectorAll('.memory-sheet a[href], .memory-sheet button:not([disabled]), .memory-sheet input, .memory-sheet select, .memory-sheet textarea')]
+    .filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0);
+  return stops.length > 1;
+});
+results.openerExpanded = await page.locator('#memory-open').getAttribute('aria-expanded');
 results.applyPresent = (await page.locator('#memory-apply').count()) === 1;
 // Regression: every memory control must carry an accessible name — the
 // label has to be tied to it, not merely sitting next to it.
@@ -185,6 +199,8 @@ results.eraseKeptIcon = await page.locator('.btn--danger .icon').count();
 await page.locator('.memory-sheet input[type="text"]').first().fill('Akira');
 await page.locator('#memory-apply').click();
 await page.waitForTimeout(900);
+results.focusAfterMemoryClose = await page.evaluate(() => document.activeElement?.id ?? '');
+results.openerCollapsed = await page.locator('#memory-open').getAttribute('aria-expanded');
 results.appliedName = await page.evaluate(() => JSON.parse(localStorage.getItem('soena.profile.v1')).name);
 await page.screenshot({ path: 'scripts/.shots/shot-memory.png' });
 
@@ -229,13 +245,13 @@ await page.screenshot({ path: 'scripts/.shots/shot-tide.png' });
 // attribute + storage + a real blur increase; then back to default.
 results.frostSteps = await page.getByRole('radio', { name: /clear|sheer|frosted|misted|veiled/i }).count();
 const blurAt3 = await page.evaluate(() => {
-  const f = getComputedStyle(document.querySelector('#panes .pane:nth-child(2)')).backdropFilter;
+  const f = getComputedStyle(document.getElementById('glass')).backdropFilter;
   return Number((f.match(/blur\((\d+(?:\.\d+)?)/) ?? [0, 0])[1]);
 });
 await page.getByRole('radio', { name: 'Veiled' }).click();
 await page.waitForTimeout(300);
 results.frostVeiled = await page.evaluate((prev) => {
-  const f = getComputedStyle(document.querySelector('#panes .pane:nth-child(2)')).backdropFilter;
+  const f = getComputedStyle(document.getElementById('glass')).backdropFilter;
   const px = Number((f.match(/blur\((\d+(?:\.\d+)?)/) ?? [0, 0])[1]);
   return {
     attr: document.documentElement.dataset.frost,
@@ -267,7 +283,7 @@ await page.waitForTimeout(700);
 
 // Avenues live on their own page; navigation goes through the drawer.
 // Inner pages open behind the brief arrival curtain.
-await page.goto('http://localhost:4173/avenues.html', { waitUntil: 'networkidle' });
+await page.goto(ORIGIN + '/avenues.html', { waitUntil: 'networkidle' });
 await arrived();
 await page.waitForTimeout(1200);
 results.arrivalOnInnerPages = await page.evaluate(() =>
@@ -321,14 +337,14 @@ results.journalEntries = await page.locator('.journal-entry').count();
 
 // Back to the landing: returning-visitor greeting (typed into the hero
 // line). Every hard load — refresh included — passes the full arrival.
-await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
+await page.goto(ORIGIN + '/', { waitUntil: 'networkidle' });
 await arrived();
 await page.waitForTimeout(4200);
 results.returningOnboardingShown = await page.locator('.threshold-panel').count();
 results.returningGreeting = await page.locator('#hero-line').textContent();
 
 // The reaching place (contact page): conversation -> folded letter
-await page.goto('http://localhost:4173/contact.html', { waitUntil: 'networkidle' });
+await page.goto(ORIGIN + '/contact.html', { waitUntil: 'networkidle' });
 await arrived();
 await page.waitForTimeout(1200);
 results.reachHero = await page.locator('#reach-hero h1').textContent();
@@ -356,7 +372,7 @@ results.themeBackToLight = await page.evaluate(
 // with a neutral head and no physics creep across events.
 const rmPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 await rmPage.emulateMedia({ reducedMotion: 'reduce' });
-await rmPage.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
+await rmPage.goto(ORIGIN + '/', { waitUntil: 'networkidle' });
 await rmPage.waitForFunction(() => document.documentElement.classList.contains('arrival-done'), null, { timeout: 9000 });
 await rmPage.waitForSelector('#figure.is-here', { timeout: 8000 });
 await rmPage.waitForTimeout(600);
@@ -376,7 +392,7 @@ await rmPage.close();
 // wordmark colour — even though every other surface inverts.
 const darkPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 await darkPage.addInitScript(() => localStorage.setItem('soena.theme.v1', 'dark'));
-await darkPage.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
+await darkPage.goto(ORIGIN + '/', { waitUntil: 'networkidle' });
 await darkPage.waitForSelector('#arrival', { timeout: 5000 });
 const darkVeil = await darkPage.evaluate(() => {
   const v = getComputedStyle(document.getElementById('arrival'));

@@ -47,6 +47,8 @@ export function initHeaderControls(): void {
   const memoryBtn = document.getElementById('memory-open');
   if (memoryBtn) {
     prefixIcon(memoryBtn as HTMLElement, 'brain');
+    memoryBtn.setAttribute('aria-haspopup', 'dialog');
+    memoryBtn.setAttribute('aria-expanded', 'false');
     memoryBtn.addEventListener('click', openMemoryPanel);
   }
 }
