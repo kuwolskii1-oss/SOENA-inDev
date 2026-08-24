@@ -4,6 +4,9 @@
  * Edits collect in a draft and commit only when the person presses
  * Apply — Cancel walks away leaving memory untouched. Trust in a
  * companion that remembers you begins with control over the remembering.
+ *
+ * The panel has two tabs: what SOENA remembers, and Developer options —
+ * a demo drawer where the whole site's palette can be swapped live.
  */
 import {
   INTENTIONS,
@@ -18,6 +21,7 @@ import { COMPANION_FORMS } from '../data/companion-config';
 import { loadJournal } from './journal';
 import { say, speakErased, speakMemoryOpened } from '../companion/dialogue';
 import { prefixIcon, setLabel, type IconName } from './icons';
+import { PALETTES, applyPalette, currentPalette } from './palette';
 
 export function openMemoryPanel(): void {
   const root = document.getElementById('overlay-root');
@@ -40,8 +44,62 @@ export function openMemoryPanel(): void {
   const panel = document.createElement('div');
   panel.className = 'threshold-panel memory-sheet';
 
+  // Two tabs: memory, and the developer drawer.
+  const tablist = document.createElement('div');
+  tablist.className = 'panel-tabs';
+  tablist.setAttribute('role', 'tablist');
+  tablist.setAttribute('aria-label', 'Panel sections');
+  const memPane = document.createElement('div');
+  memPane.id = 'memory-pane';
+  memPane.setAttribute('role', 'tabpanel');
+  memPane.setAttribute('tabindex', '0');
+  const devPane = document.createElement('div');
+  devPane.id = 'developer-pane';
+  devPane.setAttribute('role', 'tabpanel');
+  devPane.setAttribute('tabindex', '0');
+  devPane.hidden = true;
+  const tabButtons: HTMLButtonElement[] = [];
+  const showTab = (which: 'memory' | 'developer') => {
+    const isDev = which === 'developer';
+    memPane.hidden = isDev;
+    devPane.hidden = !isDev;
+    // Apply/Cancel/Erase act on memory: hide them while the developer
+    // drawer is open (its palette switch commits on the spot).
+    panel.classList.toggle('is-dev', isDev);
+    for (const b of tabButtons) {
+      const on = b.dataset.tab === which;
+      b.setAttribute('aria-selected', String(on));
+      b.tabIndex = on ? 0 : -1;
+    }
+  };
+  for (const [id, label, glyph] of [
+    ['memory', 'What I remember', 'brain'],
+    ['developer', 'Developer options', 'sparkles'],
+  ] as const) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'panel-tab';
+    b.dataset.tab = id;
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-controls', `${id}-pane`);
+    b.textContent = label;
+    prefixIcon(b, glyph);
+    b.addEventListener('click', () => showTab(id));
+    b.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      const next = tabButtons[(tabButtons.indexOf(b) + (e.key === 'ArrowRight' ? 1 : -1) + tabButtons.length) % tabButtons.length];
+      showTab(next.dataset.tab as 'memory' | 'developer');
+      next.focus();
+    });
+    tabButtons.push(b);
+    tablist.appendChild(b);
+  }
+  showTab('memory');
+  panel.append(tablist, memPane, devPane);
+
   if (!p) {
-    panel.innerHTML = `
+    memPane.innerHTML = `
       <h2 tabindex="-1">I hold nothing.</h2>
       <p>You entered quietly, so I kept no memory. If you would like me to remember you,
       reload the page and step through the door again — or keep walking unremembered.
@@ -60,13 +118,13 @@ export function openMemoryPanel(): void {
     };
 
     const journalCount = loadJournal().length;
-    panel.innerHTML = `
+    memPane.innerHTML = `
       <h2 tabindex="-1">What I remember</h2>
       <p class="memory-note">All of this lives in this browser's local storage — nowhere else.
       Change anything, then press Apply; Cancel leaves my memory as it was.</p>`;
 
     // Name
-    panel.appendChild(field('Your name', 'user', () => {
+    memPane.appendChild(field('Your name', 'user', () => {
       const input = document.createElement('input');
       input.className = 'threshold-input';
       input.type = 'text';
@@ -79,7 +137,7 @@ export function openMemoryPanel(): void {
     }));
 
     // Pronouns
-    panel.appendChild(field('Your pronouns', 'message-circle', () => {
+    memPane.appendChild(field('Your pronouns', 'message-circle', () => {
       const select = document.createElement('select');
       select.className = 'threshold-input';
       const opts = [...PRONOUN_PRESETS.map((s) => s.label), 'just my name'];
@@ -102,7 +160,7 @@ export function openMemoryPanel(): void {
     }));
 
     // Form
-    panel.appendChild(field('The shape I wear', 'sparkles', () => {
+    memPane.appendChild(field('The shape I wear', 'sparkles', () => {
       const select = document.createElement('select');
       select.className = 'threshold-input';
       for (const f of COMPANION_FORMS) {
@@ -119,7 +177,7 @@ export function openMemoryPanel(): void {
     }));
 
     // Orientation
-    panel.appendChild(field('The lean of your path', 'compass', () => {
+    memPane.appendChild(field('The lean of your path', 'compass', () => {
       const select = document.createElement('select');
       select.className = 'threshold-input';
       for (const o of ORIENTATIONS) {
@@ -136,7 +194,7 @@ export function openMemoryPanel(): void {
     }));
 
     // Intentions
-    panel.appendChild(field('What you came seeking', 'target', () => {
+    memPane.appendChild(field('What you came seeking', 'target', () => {
       const wrap = document.createElement('div');
       wrap.className = 'chips';
       for (const it of INTENTIONS) {
@@ -153,7 +211,7 @@ export function openMemoryPanel(): void {
     }));
 
     // Keepsakes
-    panel.appendChild(field('Keepsakes — things you asked me to hold', 'gem', () => {
+    memPane.appendChild(field('Keepsakes — things you asked me to hold', 'gem', () => {
       const wrap = document.createElement('div');
       const list = document.createElement('ul');
       list.className = 'keepsakes';
@@ -196,7 +254,7 @@ export function openMemoryPanel(): void {
     const trace = document.createElement('p');
     trace.className = 'memory-trace';
     trace.textContent = `Walked together ${p.visits} ${p.visits === 1 ? 'time' : 'times'} since ${new Date(p.createdAt).toLocaleDateString()}. ${journalCount} ${journalCount === 1 ? 'testimony' : 'testimonies'} kept.`;
-    panel.appendChild(trace);
+    memPane.appendChild(trace);
 
     const actions = document.createElement('div');
     actions.className = 'threshold-actions';
@@ -226,6 +284,8 @@ export function openMemoryPanel(): void {
     panel.appendChild(actions);
   }
 
+  buildDeveloperPane(devPane, close);
+
   overlay.appendChild(panel);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) close();
@@ -236,6 +296,87 @@ export function openMemoryPanel(): void {
   root.appendChild(overlay);
   (panel.querySelector('h2') as HTMLElement | null)?.focus();
   speakMemoryOpened();
+}
+
+/**
+ * Developer options — a demo drawer, not a preference.
+ *
+ * The palette is pure CSS (see ui/palette.ts): switching writes one
+ * attribute on <html>, so it applies to every surface at once and
+ * survives reloads. It commits immediately rather than through Apply,
+ * because the point is to SEE the change while the panel is open.
+ */
+function buildDeveloperPane(pane: HTMLElement, close: () => void): void {
+  const h2 = document.createElement('h2');
+  h2.tabIndex = -1;
+  h2.textContent = 'Developer options';
+  const note = document.createElement('p');
+  note.className = 'memory-note';
+  note.textContent =
+    'For demos: swap the whole site\u2019s colour world. Applies at once and is remembered — no Apply needed. Day and night both follow the palette; the loading screen keeps one look per palette.';
+  pane.append(h2, note);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'memory-field';
+  const label = document.createElement('label');
+  label.id = 'palette-label';
+  label.textContent = 'Colour palette';
+  prefixIcon(label, 'gem');
+
+  const group = document.createElement('div');
+  group.className = 'palette-grid';
+  group.setAttribute('role', 'radiogroup');
+  group.setAttribute('aria-labelledby', label.id);
+
+  const options: HTMLButtonElement[] = [];
+  const select = (id: string) => {
+    applyPalette(id);
+    for (const o of options) {
+      const on = o.dataset.palette === id;
+      o.setAttribute('aria-checked', String(on));
+      o.tabIndex = on ? 0 : -1;
+    }
+  };
+
+  for (const p of PALETTES) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'palette-option';
+    b.dataset.palette = p.id;
+    b.setAttribute('role', 'radio');
+    const on = currentPalette() === p.id;
+    b.setAttribute('aria-checked', String(on));
+    b.tabIndex = on ? 0 : -1;
+    const swatches = p.swatches
+      .map((c) => `<span class="palette-swatch" style="background:${c}"></span>`)
+      .join('');
+    b.innerHTML = `<span class="palette-swatches" aria-hidden="true">${swatches}</span><span class="palette-name">${p.label}</span><span class="palette-note">${p.note}</span>`;
+    b.addEventListener('click', () => select(p.id));
+    b.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      e.preventDefault();
+      const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1;
+      const next = options[(options.indexOf(b) + step + options.length) % options.length];
+      select(next.dataset.palette!);
+      next.focus();
+    });
+    options.push(b);
+    group.appendChild(b);
+  }
+
+  wrap.append(label, group);
+  pane.appendChild(wrap);
+
+  const actions = document.createElement('div');
+  actions.className = 'threshold-actions';
+  const done = document.createElement('button');
+  done.type = 'button';
+  done.className = 'btn btn--primary';
+  done.textContent = 'Close';
+  prefixIcon(done, 'check');
+  done.addEventListener('click', close);
+  actions.appendChild(done);
+  pane.appendChild(actions);
 }
 
 let fieldSeq = 0;

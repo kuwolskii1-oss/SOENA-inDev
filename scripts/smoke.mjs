@@ -45,6 +45,14 @@ await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
 const results = {};
 // The arrival veil must be up right after load (min hold ~1.25s)…
 results.arrivalVisibleAtLoad = await page.locator('#arrival').isVisible();
+// Its painted colours are recorded here and compared against a dark-mode
+// load later: the loading screen must NOT invert with the theme.
+const veilLook = await page.evaluate(() => {
+  const v = getComputedStyle(document.getElementById('arrival'));
+  const w = getComputedStyle(document.querySelector('.arrival-word'));
+  return `${v.backgroundColor}|${w.color}`;
+});
+results.veilLook = veilLook;
 results.arrivalLetters = await page.locator('#arrival .arrival-word span').count();
 await arrived();
 await page.waitForTimeout(1900);
@@ -53,6 +61,14 @@ results.arrivalGone = (await page.locator('#arrival').count()) === 0;
 results.heroRevealed = await page.evaluate(
   () => getComputedStyle(document.getElementById('hero-line')).opacity,
 );
+// The frosted haze: a real backdrop blur over the canopy. The weakest
+// quality tier gets a cheaper radius, so the floor is tier-aware.
+results.auraFrosted = await page.evaluate(() => {
+  const f = getComputedStyle(document.getElementById('aura')).backdropFilter;
+  const px = Number((f.match(/blur\((\d+)/) ?? [0, 0])[1]);
+  const floor = document.documentElement.dataset.tier === '0' ? 8 : 12;
+  return { px, tier: document.documentElement.dataset.tier, ok: px >= floor };
+});
 results.title = await page.title();
 results.onboardingVisible = await page.locator('.threshold-panel').isVisible();
 
@@ -139,7 +155,7 @@ await page.waitForTimeout(600);
 // Memory panel: edits buffer into a draft; Apply commits
 await page.locator('#memory-open').click();
 await page.waitForTimeout(900);
-results.memoryPanel = await page.locator('.memory-sheet h2').textContent();
+results.memoryPanel = await page.locator('#memory-pane h2').textContent();
 results.applyPresent = (await page.locator('#memory-apply').count()) === 1;
 // Regression: every memory control must carry an accessible name — the
 // label has to be tied to it, not merely sitting next to it.
@@ -179,6 +195,43 @@ results.themeStored = await page.evaluate(() => localStorage.getItem('soena.them
 await page.waitForTimeout(1600);
 results.themeVideoCleaned = (await page.locator('#backdrop video').count()) === 0;
 await page.screenshot({ path: 'scripts/.shots/shot-night.png' });
+
+// Developer options: the palette switcher (a demo drawer, applies live).
+await page.locator('#memory-open').click();
+await page.waitForTimeout(700);
+results.devTabPresent = await page.getByRole('tab', { name: /developer options/i }).count();
+await page.getByRole('tab', { name: /developer options/i }).click();
+await page.waitForTimeout(300);
+results.paletteOptions = await page.getByRole('radio').count();
+const inkBefore = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ink').trim());
+await page.getByRole('radio', { name: /tide/i }).click();
+await page.waitForTimeout(900);
+results.paletteSwitched = await page.evaluate(() => {
+  const html = document.documentElement;
+  return {
+    attr: html.dataset.palette ?? 'garden',
+    stored: localStorage.getItem('soena.palette.v1'),
+    ink: getComputedStyle(html).getPropertyValue('--ink').trim(),
+    veilGround: getComputedStyle(html).getPropertyValue('--veil-ground').trim(),
+  };
+});
+results.paletteChangedInk = inkBefore !== results.paletteSwitched.ink;
+await page.screenshot({ path: 'scripts/.shots/shot-tide.png' });
+// The developer drawer carries its own footer (Apply/Cancel/Erase are
+// memory's and stay hidden here).
+results.devFooterOwn = await page.evaluate(() => {
+  const dev = document.getElementById('developer-pane');
+  const memActions = document.querySelector('.memory-sheet > .threshold-actions');
+  return (
+    !!dev.querySelector('.threshold-actions .btn--primary') &&
+    (!memActions || getComputedStyle(memActions).display === 'none')
+  );
+});
+// Back to Garden so the rest of the run is in the default world.
+await page.getByRole('radio', { name: /garden/i }).click();
+await page.waitForTimeout(500);
+await page.locator('#developer-pane .btn--primary').click();
+await page.waitForTimeout(700);
 
 // Avenues live on their own page; navigation goes through the drawer.
 // Inner pages open behind the brief arrival curtain.
@@ -286,6 +339,25 @@ results.reducedMotionFigure = await rmPage.evaluate(() => {
   };
 });
 await rmPage.close();
+
+// The loading veil must be identical in dark mode — same ground, same
+// wordmark colour — even though every other surface inverts.
+const darkPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+await darkPage.addInitScript(() => localStorage.setItem('soena.theme.v1', 'dark'));
+await darkPage.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
+await darkPage.waitForSelector('#arrival', { timeout: 5000 });
+const darkVeil = await darkPage.evaluate(() => {
+  const v = getComputedStyle(document.getElementById('arrival'));
+  const w = getComputedStyle(document.querySelector('.arrival-word'));
+  return {
+    look: `${v.backgroundColor}|${w.color}`,
+    theme: document.documentElement.dataset.theme,
+  };
+});
+results.veilSameInDark = darkVeil.look === veilLook && darkVeil.theme === 'dark';
+results.veilDarkLook = darkVeil.look;
+await darkPage.screenshot({ path: 'scripts/.shots/shot-veil-dark.png' });
+await darkPage.close();
 
 results.errors = errors;
 console.log(JSON.stringify(results, null, 2));

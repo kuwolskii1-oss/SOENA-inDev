@@ -6,10 +6,21 @@
    prefers-reduced-motion.
    ================================================================ */
 
-/* The garden system (palette subject to change): off-white ground
-   #FBFFF9, deep forest ink #04231C, living green #377B42 for the
-   interactive layer, forest #134623 + mint #C4F6C5 for primary actions,
-   lime #C7F454 reserved as the glow. One committed visual world. */
+/* ---------------------------------------------------------------
+   Palettes — the site's colour worlds, switchable at runtime from the
+   memory panel's Developer options (see ui/palette.ts). Each page's
+   critical CSS carries the same tokens so the first painted frame is
+   already in-palette.
+
+   INVARIANT: every dark block must redefine the FULL token set, because
+   a palette selector (0,1,1) outranks the plain dark block (0,1,0) —
+   only the palette+dark block (0,2,1) can win it back.
+
+   Garden: off-white ground #FBFFF9, deep forest ink #04231C, living
+   green #377B42, forest #134623 + mint #C4F6C5, lime #C7F454 as glow.
+   Tide: teal #086D6D, sage #66AC91, deep teal #053E44, sand #F6D285,
+   pale sand #F3E594, near-black navy #011F27.
+   --------------------------------------------------------------- */
 :root {
   --ink: #04231c;
   --ink-dim: rgba(4, 35, 28, 0.66);
@@ -26,9 +37,45 @@
   --lime: #c7f454;
   --accent-soft: rgba(55, 123, 66, 0.13);
   --danger: #b3402f;
+  /* The wash over the canopy (frosted glass) and the loading veil. */
+  --wash-bg-rgb: 251, 255, 249;
+  --wash-ink-rgb: 4, 35, 28;
+  --wash-tint-rgb: 173, 245, 188;
+  --wash-glow-rgb: 199, 244, 84;
+  --veil-ground: #04231c;
+  --veil-word: #fbfff9;
+  --veil-line: #c7f454;
+  --veil-line-glow: rgba(199, 244, 84, 0.55);
   --serif: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
   --sans: 'Outfit Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Tide — the second world. Light. */
+html[data-palette='tide'] {
+  --ink: #011f27;
+  --ink-dim: rgba(1, 31, 39, 0.68);
+  --ink-faint: rgba(1, 31, 39, 0.44);
+  --bg: #f3e594;
+  --frost: rgba(246, 210, 133, 0.62);
+  --veil: rgba(1, 31, 39, 0.16);
+  --veil-strong: rgba(1, 31, 39, 0.3);
+  --accent: #086d6d;
+  --accent-deep: #053e44;
+  --accent-teal: #19827c;
+  --mint: #f6d285;
+  --mint-soft: #66ac91;
+  --lime: #f6d285;
+  --accent-soft: rgba(8, 109, 109, 0.14);
+  --danger: #b3402f;
+  --wash-bg-rgb: 243, 229, 148;
+  --wash-ink-rgb: 1, 31, 39;
+  --wash-tint-rgb: 102, 172, 145;
+  --wash-glow-rgb: 246, 210, 133;
+  --veil-ground: #011f27;
+  --veil-word: #f3e594;
+  --veil-line: #f6d285;
+  --veil-line-glow: rgba(246, 210, 133, 0.55);
 }
 
 * { box-sizing: border-box; }
@@ -77,25 +124,35 @@ body {
 }
 .backdrop-fade.is-in { opacity: 1; }
 
-/* The aura is now a translucent wash over the canopy — it keeps the
-   text legible and carries the avenue hue tint, but never hides the sky. */
+/* Frosted glass over the canopy: a real backdrop blur plus a
+   palette-tinted wash. The leaves stay readable as weather behind the
+   page without competing with the text. Avenue hue rides on --aura-h1.
+   The figure sits ABOVE this layer, so she stays crisp. */
 #aura {
   --aura-h1: 255;
   --aura-h2: 205;
+  backdrop-filter: blur(12px) saturate(1.06);
+  -webkit-backdrop-filter: blur(12px) saturate(1.06);
   background:
-    radial-gradient(70rem 54rem at 60% 38%, rgba(251, 255, 249, 0.58), transparent 70%),
-    radial-gradient(44rem 40rem at 22% 82%, rgba(173, 245, 188, 0.24), transparent 65%),
-    radial-gradient(34rem 30rem at 78% 18%, rgba(199, 244, 84, 0.12), transparent 60%),
+    radial-gradient(70rem 54rem at 60% 38%, rgba(var(--wash-bg-rgb), 0.5), transparent 70%),
+    radial-gradient(44rem 40rem at 22% 82%, rgba(var(--wash-tint-rgb), 0.22), transparent 65%),
+    radial-gradient(34rem 30rem at 78% 18%, rgba(var(--wash-glow-rgb), 0.12), transparent 60%),
     radial-gradient(40rem 36rem at 50% 60%, hsl(var(--aura-h1) 55% 72% / 0.08), transparent 65%),
-    linear-gradient(rgba(251, 255, 249, 0.4), rgba(232, 244, 233, 0.46));
+    linear-gradient(rgba(var(--wash-bg-rgb), 0.32), rgba(var(--wash-bg-rgb), 0.4));
   transition: background 1.2s linear;
 }
 [data-theme='dark'] #aura {
   background:
-    radial-gradient(70rem 54rem at 60% 38%, rgba(4, 35, 28, 0.26), transparent 70%),
-    radial-gradient(44rem 40rem at 22% 82%, rgba(4, 35, 28, 0.36), transparent 65%),
+    radial-gradient(70rem 54rem at 60% 38%, rgba(var(--wash-ink-rgb), 0.24), transparent 70%),
+    radial-gradient(44rem 40rem at 22% 82%, rgba(var(--wash-ink-rgb), 0.34), transparent 65%),
     radial-gradient(40rem 36rem at 50% 60%, hsl(var(--aura-h1) 55% 40% / 0.1), transparent 65%),
-    linear-gradient(rgba(4, 35, 28, 0.26), rgba(4, 35, 28, 0.44));
+    linear-gradient(rgba(var(--wash-ink-rgb), 0.22), rgba(var(--wash-ink-rgb), 0.4));
+}
+/* Weakest tier: a lighter blur rather than none — the frosting is the
+   look, so modest hardware should still get it, just cheaper. */
+html[data-tier='0'] #aura {
+  backdrop-filter: blur(9px) saturate(1.04);
+  -webkit-backdrop-filter: blur(9px) saturate(1.04);
 }
 
 #gl {
@@ -171,7 +228,7 @@ main, header, footer { position: relative; z-index: 2; }
   align-items: center;
   gap: 1.5rem;
   padding: 0.9rem 1.4rem;
-  background: linear-gradient(rgba(251, 255, 249, 0.92), rgba(251, 255, 249, 0));
+  background: linear-gradient(rgba(var(--wash-bg-rgb), 0.92), rgba(var(--wash-bg-rgb), 0));
   backdrop-filter: blur(2px);
 }
 
@@ -180,7 +237,7 @@ main, header, footer { position: relative; z-index: 2; }
   left: -200vw;
   padding: 0.5rem 1rem;
   background: var(--accent);
-  color: #fff;
+  color: var(--bg);
   border-radius: 999px;
 }
 .skip-link:focus { left: 1rem; top: 1rem; z-index: 20; }
@@ -279,7 +336,7 @@ main, header, footer { position: relative; z-index: 2; }
 }
 
 #hero-chips .btn--chip {
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(var(--wash-bg-rgb), 0.62);
   border-color: var(--veil);
   color: var(--ink);
   font-size: 0.88rem;
@@ -287,7 +344,7 @@ main, header, footer { position: relative; z-index: 2; }
 }
 #hero-chips .btn--chip:hover, #hero-chips .btn--chip:focus-visible {
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(var(--wash-bg-rgb), 0.85);
 }
 
 .hero-cue {
@@ -525,7 +582,7 @@ main, header, footer { position: relative; z-index: 2; }
   max-width: min(38rem, 86vw);
   padding: 0.85rem 1.5rem;
   border-radius: 1.2rem;
-  background: rgba(248, 248, 250, 0.86);
+  background: rgba(var(--wash-bg-rgb), 0.88);
   border: 1px solid var(--veil);
   backdrop-filter: blur(8px);
   font-family: var(--serif);
@@ -552,7 +609,7 @@ main, header, footer { position: relative; z-index: 2; }
   gap: 0.8rem;
   padding: 0.7rem 1.1rem;
   border-radius: 999px;
-  background: rgba(248, 248, 250, 0.9);
+  background: rgba(var(--wash-bg-rgb), 0.9);
   border: 1px solid var(--veil);
   backdrop-filter: blur(8px);
   opacity: 0;
@@ -574,8 +631,8 @@ main, header, footer { position: relative; z-index: 2; }
   display: grid;
   place-items: center;
   padding: 1.5rem;
-  background: rgba(222, 223, 226, 0.82);
-  backdrop-filter: blur(14px);
+  background: rgba(var(--wash-bg-rgb), 0.78);
+  backdrop-filter: blur(16px);
   animation: threshold-in 0.7s var(--ease);
   overflow-y: auto;
 }
@@ -616,7 +673,7 @@ main, header, footer { position: relative; z-index: 2; }
 .threshold-input.small { width: auto; flex: 1; min-width: 0; }
 
 select.threshold-input { appearance: none; }
-select.threshold-input option { background: #f4f4f6; color: var(--ink); }
+select.threshold-input option { background: var(--bg); color: var(--ink); }
 
 .threshold-custom { margin-top: 0.8rem; color: var(--ink-dim); }
 .threshold-custom summary { cursor: pointer; font-size: 0.88rem; letter-spacing: 0.06em; }
@@ -723,7 +780,7 @@ select.threshold-input option { background: #f4f4f6; color: var(--ink); }
   font-size: 1.02rem;
   line-height: 1.7;
   color: var(--ink);
-  background: rgba(248, 248, 250, 0.9);
+  background: rgba(var(--wash-bg-rgb), 0.9);
   border: 1px solid var(--veil);
   border-radius: 1rem;
   padding: 1.4rem 1.5rem;
@@ -764,7 +821,7 @@ select.threshold-input option { background: #f4f4f6; color: var(--ink); }
   flex-direction: column;
   border: 1px solid var(--veil);
   border-radius: 1.2rem;
-  background: rgba(246, 246, 248, 0.94);
+  background: rgba(var(--wash-bg-rgb), 0.94);
   backdrop-filter: blur(14px);
   opacity: 0;
   transform: translateY(14px);
@@ -968,7 +1025,7 @@ html.lenis, html.lenis body { height: auto; }
   bottom: 0;
   z-index: 25;
   width: min(20rem, 84vw);
-  background: rgba(251, 255, 249, 0.96);
+  background: rgba(var(--wash-bg-rgb), 0.96);
   backdrop-filter: blur(14px);
   border-left: 1px solid var(--veil);
   padding: 1.2rem 1.6rem 2rem;
@@ -1061,6 +1118,70 @@ body.landing .hero-left { position: relative; z-index: 2; }
 .btn-label { display: inline; }
 
 /* ---------------------------------------------------------------
+   Panel tabs + the Developer options drawer (palette picker)
+   --------------------------------------------------------------- */
+
+.panel-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.4rem;
+  border-bottom: 1px solid var(--veil);
+}
+.panel-tab {
+  font: inherit;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0.5rem 0.2rem;
+  margin-bottom: -1px;
+  margin-right: 0.9rem;
+  cursor: pointer;
+  transition: color 0.3s, border-color 0.3s;
+}
+.panel-tab:hover { color: var(--ink-dim); }
+.panel-tab[aria-selected='true'] { color: var(--ink); border-bottom-color: var(--accent); }
+.panel-tab .icon { width: 0.95em; height: 0.95em; }
+
+.palette-grid {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+.palette-option {
+  display: grid;
+  gap: 0.4rem;
+  text-align: left;
+  font: inherit;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--veil);
+  border-radius: 1rem;
+  background: var(--frost);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.3s, background 0.3s, transform 0.2s var(--ease);
+}
+.palette-option:hover { border-color: var(--veil-strong); }
+.palette-option:active { transform: scale(0.99); }
+.palette-option[aria-checked='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.palette-swatches { display: flex; gap: 0.25rem; }
+.palette-swatch {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--veil);
+}
+.palette-name { font-size: 0.98rem; font-weight: 500; }
+.palette-note { font-size: 0.82rem; line-height: 1.45; color: var(--ink-dim); }
+/* The memory footer is memory's; the developer drawer carries its own. */
+.memory-sheet.is-dev > .threshold-actions { display: none; }
+
+/* ---------------------------------------------------------------
    The arrival — the door held closed for one breath, then lifted.
 
    The veil itself is painted from each page's critical CSS (it must
@@ -1077,13 +1198,13 @@ body.landing .hero-left { position: relative; z-index: 2; }
 #arrival {
   position: fixed; inset: 0; z-index: 120;
   display: none; flex-direction: column; align-items: center; justify-content: center;
-  background: var(--ink);
+  background: var(--veil-ground);
 }
 .has-arrival #arrival { display: flex; }
 html.has-arrival:not(.arrival-done) { overflow: hidden; }
 
 .arrival-word {
-  margin: 0; color: var(--bg);
+  margin: 0; color: var(--veil-word);
   font-family: var(--serif);
   font-weight: 480; font-size: clamp(1.9rem, 5.4vw, 3.1rem);
   letter-spacing: 0.32em; text-indent: 0.32em;
@@ -1104,8 +1225,8 @@ html.has-arrival:not(.arrival-done) { overflow: hidden; }
 
 .arrival-line {
   width: min(9rem, 30vw); height: 2px; margin-top: 1.4rem;
-  background: var(--lime); border-radius: 2px;
-  box-shadow: 0 0 18px rgba(199, 244, 84, 0.55);
+  background: var(--veil-line); border-radius: 2px;
+  box-shadow: 0 0 18px var(--veil-line-glow);
   transform: scaleX(0);
   transition: transform 1s var(--ease) 0.12s;
 }
@@ -1174,7 +1295,8 @@ html.arrival-done .hero-left > :nth-child(3) { transition-delay: 0.46s; }
    in step with the sky (see ui/theme.ts).
    --------------------------------------------------------------- */
 
-[data-theme='dark'] {
+/* Garden — night. */
+html[data-theme='dark'] {
   color-scheme: dark;
   --ink: #fbfff9;
   --ink-dim: rgba(251, 255, 249, 0.72);
@@ -1184,23 +1306,51 @@ html.arrival-done .hero-left > :nth-child(3) { transition-delay: 0.46s; }
   --veil: rgba(251, 255, 249, 0.18);
   --veil-strong: rgba(251, 255, 249, 0.34);
   --accent: #adf5bc;
+  --accent-deep: #134623;
   --accent-teal: #1d7a76;
+  --mint: #c4f6c5;
+  --mint-soft: #adf5bc;
+  --lime: #c7f454;
   --accent-soft: rgba(173, 245, 188, 0.16);
   --danger: #ff9d8a;
 }
 
+/* Tide — night. Full set: a palette selector outranks the plain dark
+   block, so every token that differs must be restated here. */
+html[data-palette='tide'][data-theme='dark'] {
+  color-scheme: dark;
+  --ink: #f3e594;
+  --ink-dim: rgba(243, 229, 148, 0.74);
+  --ink-faint: rgba(243, 229, 148, 0.5);
+  --bg: #011f27;
+  --frost: rgba(5, 62, 68, 0.72);
+  --veil: rgba(243, 229, 148, 0.2);
+  --veil-strong: rgba(243, 229, 148, 0.36);
+  --accent: #66ac91;
+  --accent-deep: #053e44;
+  --accent-teal: #19827c;
+  --mint: #f3e594;
+  --mint-soft: #66ac91;
+  --lime: #f6d285;
+  --accent-soft: rgba(102, 172, 145, 0.18);
+  --danger: #ff9d8a;
+}
+
 [data-theme='dark'] #site-head {
-  background: linear-gradient(rgba(4, 35, 28, 0.9), rgba(4, 35, 28, 0));
+  background: linear-gradient(rgba(var(--wash-ink-rgb), 0.9), rgba(var(--wash-ink-rgb), 0));
 }
 [data-theme='dark'] .skip-link { color: var(--bg); }
-[data-theme='dark'] #hero-chips .btn--chip { background: rgba(4, 35, 28, 0.45); }
+[data-theme='dark'] #hero-chips .btn--chip { background: rgba(var(--wash-ink-rgb), 0.5); }
 [data-theme='dark'] #hero-chips .btn--chip:hover,
-[data-theme='dark'] #hero-chips .btn--chip:focus-visible { background: rgba(4, 35, 28, 0.7); }
-[data-theme='dark'] .threshold { background: rgba(2, 17, 13, 0.78); }
-[data-theme='dark'] .drawer { background: rgba(5, 30, 24, 0.96); }
-[data-theme='dark'] select.threshold-input option { background: #0a2f27; color: var(--ink); }
+[data-theme='dark'] #hero-chips .btn--chip:focus-visible { background: rgba(var(--wash-ink-rgb), 0.72); }
+[data-theme='dark'] .threshold { background: rgba(var(--wash-ink-rgb), 0.82); }
+[data-theme='dark'] .drawer { background: rgba(var(--wash-ink-rgb), 0.94); }
+[data-theme='dark'] select.threshold-input option { background: var(--bg); color: var(--ink); }
 [data-theme='dark'] .switch-thumb { background: var(--mint); }
-[data-theme='dark'] #caption { background: rgba(6, 32, 26, 0.88); }
+[data-theme='dark'] #caption { background: rgba(var(--wash-ink-rgb), 0.9); }
+[data-theme='dark'] .continue-bar,
+[data-theme='dark'] .reach-letter { background: rgba(var(--wash-ink-rgb), 0.9); }
+[data-theme='dark'] .chat { background: rgba(var(--wash-ink-rgb), 0.94); }
 
 /* One short breath where every surface may move together: added around
    the token flip, removed right after, so the interface dims as one. */
