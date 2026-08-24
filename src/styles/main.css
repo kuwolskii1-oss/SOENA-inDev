@@ -128,15 +128,56 @@ body {
 }
 .backdrop-fade.is-in { opacity: 1; }
 
-/* Frosted glass over the canopy: a real backdrop blur plus a
-   palette-tinted wash. The leaves stay readable as weather behind the
-   page without competing with the text. Avenue hue rides on --aura-h1.
-   The figure sits ABOVE this layer, so she stays crisp. */
+/* The frosted panes — a midground of vertical glass sheets between the
+   canopy and the page. Each pane diffuses at its own strength (like
+   separate panels of frosted glass) and meets its neighbour at a thin
+   catch-light seam. The overall opaqueness is the visitor-tunable
+   frost level: html[data-frost='1'..'5'], set from Developer options,
+   maps to a base blur + wash strength here in CSS. Level 3 is the
+   default and the site's tuned look. */
+:root {
+  --frost-blur: 12px;
+  --frost-wash: 1;
+  --frost-tint: 0;
+  --frost-scale: 1;
+}
+html[data-frost='1'] { --frost-blur: 0px; --frost-wash: 0.55; --frost-tint: 0; }
+html[data-frost='2'] { --frost-blur: 5px; --frost-wash: 0.8; --frost-tint: 0; }
+html[data-frost='3'] { --frost-blur: 12px; --frost-wash: 1; --frost-tint: 0; }
+html[data-frost='4'] { --frost-blur: 20px; --frost-wash: 1; --frost-tint: 0.09; }
+html[data-frost='5'] { --frost-blur: 30px; --frost-wash: 1; --frost-tint: 0.2; }
+
+#panes {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  pointer-events: none;
+}
+.pane {
+  height: 100%;
+  --pane-tint-rgb: var(--wash-bg-rgb);
+  backdrop-filter: blur(calc(var(--frost-blur) * var(--pane-m, 1) * var(--frost-scale))) saturate(1.06);
+  -webkit-backdrop-filter: blur(calc(var(--frost-blur) * var(--pane-m, 1) * var(--frost-scale))) saturate(1.06);
+  background: rgba(var(--pane-tint-rgb), calc(var(--frost-tint) * var(--pane-m, 1)));
+  box-shadow: inset -1px 0 0 rgba(var(--wash-bg-rgb), 0.28);
+}
+.pane:nth-child(1) { width: 24%; --pane-m: 0.55; }
+.pane:nth-child(2) { width: 30%; --pane-m: 1.2; }
+.pane:nth-child(3) { width: 24%; --pane-m: 0.8; }
+.pane:nth-child(4) { width: 22%; --pane-m: 1.4; box-shadow: none; }
+[data-theme='dark'] .pane {
+  --pane-tint-rgb: var(--wash-ink-rgb);
+  box-shadow: inset -1px 0 0 rgba(var(--wash-bg-rgb), 0.14);
+}
+[data-theme='dark'] .pane:nth-child(4) { box-shadow: none; }
+
+/* The wash above the panes: legibility tint + avenue hue. Its overall
+   presence follows the frost level via opacity. */
 #aura {
   --aura-h1: 255;
   --aura-h2: 205;
-  backdrop-filter: blur(12px) saturate(1.06);
-  -webkit-backdrop-filter: blur(12px) saturate(1.06);
+  opacity: min(1, var(--frost-wash));
   background:
     radial-gradient(70rem 54rem at 60% 38%, rgba(var(--wash-bg-rgb), 0.5), transparent 70%),
     radial-gradient(44rem 40rem at 22% 82%, rgba(var(--wash-tint-rgb), 0.22), transparent 65%),
@@ -150,14 +191,13 @@ body {
     radial-gradient(70rem 54rem at 60% 38%, rgba(var(--wash-ink-rgb), 0.24), transparent 70%),
     radial-gradient(44rem 40rem at 22% 82%, rgba(var(--wash-ink-rgb), 0.34), transparent 65%),
     radial-gradient(40rem 36rem at 50% 60%, hsl(var(--aura-h1) 55% 40% / 0.1), transparent 65%),
-    linear-gradient(rgba(var(--wash-ink-rgb), 0.22), rgba(var(--wash-ink-rgb), 0.4));
+    linear-gradient(rgba(var(--wash-ink-rgb), 0.22), rgba(var(--wash-ink-rgb), 0.4))
+;
 }
-/* Weakest tier: a lighter blur rather than none — the frosting is the
-   look, so modest hardware should still get it, just cheaper. */
-html[data-tier='0'] #aura {
-  backdrop-filter: blur(9px) saturate(1.04);
-  -webkit-backdrop-filter: blur(9px) saturate(1.04);
-}
+
+/* Weakest tier: scale the pane blur down rather than off — the
+   frosting is the look, so modest hardware keeps it, just cheaper. */
+html[data-tier='0'] { --frost-scale: 0.55; }
 
 #gl {
   position: fixed;
@@ -1184,6 +1224,44 @@ body.landing .hero-left { position: relative; z-index: 2; }
 .palette-note { font-size: 0.82rem; line-height: 1.45; color: var(--ink-dim); }
 /* The memory footer is memory's; the developer drawer carries its own. */
 .memory-sheet.is-dev > .threshold-actions { display: none; }
+
+/* Frosting steps: five swatches of the same glass, clear to opaque. */
+.frost-steps {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.frost-step {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--veil);
+  border-radius: 0.85rem;
+  background: var(--frost);
+  cursor: pointer;
+  transition: border-color 0.3s, color 0.3s, transform 0.2s var(--ease);
+}
+.frost-step:hover { border-color: var(--veil-strong); }
+.frost-step:active { transform: scale(0.98); }
+.frost-step[aria-checked='true'] {
+  color: var(--ink);
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+/* Each dot previews its level: same ink, increasingly frosted. */
+.frost-dot {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--veil);
+  background:
+    linear-gradient(rgba(var(--wash-bg-rgb), calc(var(--step) * 0.19 - 0.14)), rgba(var(--wash-bg-rgb), calc(var(--step) * 0.19 - 0.14))),
+    linear-gradient(135deg, var(--accent-teal), var(--accent-deep));
+}
 
 /* ---------------------------------------------------------------
    The arrival — the door held closed for one breath, then lifted.

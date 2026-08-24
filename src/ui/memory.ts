@@ -21,7 +21,7 @@ import { COMPANION_FORMS } from '../data/companion-config';
 import { loadJournal } from './journal';
 import { say, speakErased, speakMemoryOpened } from '../companion/dialogue';
 import { prefixIcon, setLabel, type IconName } from './icons';
-import { PALETTES, applyPalette, currentPalette } from './palette';
+import { FROST_LEVELS, PALETTES, applyFrost, applyPalette, currentFrost, currentPalette } from './palette';
 
 export function openMemoryPanel(): void {
   const root = document.getElementById('overlay-root');
@@ -313,7 +313,7 @@ function buildDeveloperPane(pane: HTMLElement, close: () => void): void {
   const note = document.createElement('p');
   note.className = 'memory-note';
   note.textContent =
-    'For demos: swap the whole site\u2019s colour world. Applies at once and is remembered — no Apply needed. Day and night both follow the palette; the loading screen keeps one look per palette.';
+    'For demos: tune the site\u2019s look. Everything here applies at once and is remembered — no Apply needed. Day and night both follow the palette; the loading screen keeps one look per palette.';
   pane.append(h2, note);
 
   const wrap = document.createElement('div');
@@ -366,6 +366,52 @@ function buildDeveloperPane(pane: HTMLElement, close: () => void): void {
 
   wrap.append(label, group);
   pane.appendChild(wrap);
+
+  // Frosting: five steps of glass, clear to near-opaque, driving the
+  // pane midground's blur and tint (html[data-frost] -> CSS).
+  const fWrap = document.createElement('div');
+  fWrap.className = 'memory-field';
+  const fLabel = document.createElement('label');
+  fLabel.id = 'frost-label';
+  fLabel.textContent = 'Frosting — the glass over the garden';
+  prefixIcon(fLabel, 'wind');
+  const fGroup = document.createElement('div');
+  fGroup.className = 'frost-steps';
+  fGroup.setAttribute('role', 'radiogroup');
+  fGroup.setAttribute('aria-labelledby', fLabel.id);
+  const fOptions: HTMLButtonElement[] = [];
+  const fSelect = (id: string) => {
+    applyFrost(id);
+    for (const o of fOptions) {
+      const on = o.dataset.frost === id;
+      o.setAttribute('aria-checked', String(on));
+      o.tabIndex = on ? 0 : -1;
+    }
+  };
+  for (const level of FROST_LEVELS) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'frost-step';
+    b.dataset.frost = level.id;
+    b.setAttribute('role', 'radio');
+    const on = currentFrost() === level.id;
+    b.setAttribute('aria-checked', String(on));
+    b.tabIndex = on ? 0 : -1;
+    b.innerHTML = `<span class="frost-dot" aria-hidden="true" style="--step:${level.id}"></span><span class="frost-name">${level.label}</span>`;
+    b.addEventListener('click', () => fSelect(level.id));
+    b.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      e.preventDefault();
+      const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1;
+      const next = fOptions[(fOptions.indexOf(b) + step + fOptions.length) % fOptions.length];
+      fSelect(next.dataset.frost!);
+      next.focus();
+    });
+    fOptions.push(b);
+    fGroup.appendChild(b);
+  }
+  fWrap.append(fLabel, fGroup);
+  pane.appendChild(fWrap);
 
   const actions = document.createElement('div');
   actions.className = 'threshold-actions';
