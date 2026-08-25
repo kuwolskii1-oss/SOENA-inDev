@@ -6,6 +6,7 @@
 import '@fontsource-variable/fraunces/index.css';
 import '@fontsource-variable/outfit/index.css';
 import './styles/main.css';
+import './styles/garden.css';
 
 import { emit } from './core/bus';
 import { loadProfile, touchVisit } from './core/profile';

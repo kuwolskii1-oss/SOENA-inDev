@@ -273,6 +273,16 @@ results.chromeFollowsGround = await page.evaluate(() => {
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   return meta === bg;
 });
+// Garden is a WORLD, not a palette: its arrangement must not follow the
+// visitor into Tide. Read the hero's shape here, in Tide, to compare.
+const heroInTide = await page.evaluate(() => {
+  const chips = document.getElementById('hero-chips');
+  return {
+    chipFlow: getComputedStyle(chips).flexDirection,
+    chipRadius: getComputedStyle(chips.querySelector('.btn--chip')).borderRadius,
+    heroJustify: getComputedStyle(document.getElementById('boot-hero')).justifyContent,
+  };
+});
 await page.screenshot({ path: 'scripts/.shots/shot-tide.png' });
 // Frosting: the 5-step glass toggle — switch to Veiled, confirm the
 // attribute + storage + a real blur increase; then back to default.
@@ -311,6 +321,21 @@ results.devFooterOwn = await page.evaluate(() => {
 // Back to Garden so the rest of the run is in the default world.
 await page.getByRole('radio', { name: /garden/i }).click();
 await page.waitForTimeout(500);
+// Garden's own hero: the chips hang off a stem instead of wrapping in a
+// row, they are cut to leaves, and the clearing sits to one side.
+results.gardenHero = await page.evaluate((tide) => {
+  const chips = document.getElementById('hero-chips');
+  const cs = getComputedStyle(chips);
+  const chip = getComputedStyle(chips.querySelector('.btn--chip'));
+  const hero = getComputedStyle(document.getElementById('boot-hero'));
+  return {
+    chipFlow: cs.flexDirection,
+    stemDrawn: getComputedStyle(chips, '::before').content !== 'none',
+    leafChips: chip.borderRadius !== tide.chipRadius && chip.borderRadius.includes('%'),
+    heroMoved: hero.justifyContent !== tide.heroJustify,
+    differsFromTide: cs.flexDirection !== tide.chipFlow,
+  };
+}, heroInTide);
 await page.locator('#developer-pane .btn--primary').click();
 await page.waitForTimeout(700);
 
@@ -326,6 +351,62 @@ results.arrivalOnInnerPages = await page.evaluate(() =>
 results.themePersistedOnAvenues = await page.evaluate(() => document.documentElement.dataset.theme);
 results.navItems = await page.locator('#ways > *').count(); // communities + drawer
 results.avenueEmblems = await page.locator('.avenue-emblem').count();
+// Garden's avenue presentation: a leaning plant marker in its own
+// column, leaf-cut doors, and vines planted between the beds.
+results.gardenAvenues = await page.evaluate(() => {
+  const inner = document.querySelector('.avenue-inner');
+  const head = document.querySelector('.avenue-head');
+  const door = document.querySelector('.door');
+  const ics = getComputedStyle(inner);
+  return {
+    twoColumn: ics.display === 'grid' && ics.gridTemplateColumns.split(' ').length === 2,
+    markerLeans: getComputedStyle(head).rotate !== 'none',
+    markerSticky: getComputedStyle(head).position === 'sticky',
+    sprig: getComputedStyle(head, '::after').content !== 'none',
+    leafDoors: getComputedStyle(door).borderRadius.includes('%'),
+    // One vine between each pair of avenues, none after the last.
+    vines: document.querySelectorAll('.garden-vine').length,
+    avenues: document.querySelectorAll('.avenue').length,
+    vinesAreAria: [...document.querySelectorAll('.garden-vine')].every(
+      (v) => v.getAttribute('aria-hidden') === 'true',
+    ),
+  };
+});
+// The vine draws itself: its stem starts fully offset and lands at 0.
+await page.evaluate(() => document.querySelector('.garden-vine')?.scrollIntoView({ block: 'center' }));
+await page.waitForTimeout(2800);
+results.gardenVineDrew = await page.evaluate(() => {
+  const stem = document.querySelector('.garden-vine.is-in .vine-stem');
+  const leaf = document.querySelector('.garden-vine.is-in .vine-leaf');
+  if (!stem || !leaf) return { drew: false };
+  const box = leaf.getBoundingClientRect();
+  return {
+    drew: Number(getComputedStyle(stem).strokeDashoffset.replace('px', '')) < 1,
+    // A leaf whose CSS transform overrode its placement collapses to a
+    // zero-ish box at the SVG origin — this catches that regression.
+    leafPlaced: box.width > 4 && box.height > 2,
+    leafLit: Number(getComputedStyle(leaf).opacity) > 0.5,
+  };
+});
+// Leaving Garden pulls the undergrowth up; returning replants it —
+// live, without a reload, off the palette:change event.
+await page.locator('#memory-open').click();
+await page.waitForTimeout(700);
+await page.getByRole('tab', { name: /developer options/i }).click();
+await page.waitForTimeout(300);
+await page.getByRole('radio', { name: /tide/i }).click();
+await page.waitForTimeout(600);
+results.tideHasNoVines = await page.evaluate(() => ({
+  world: document.documentElement.dataset.palette,
+  vines: document.querySelectorAll('.garden-vine').length,
+  bedIsOneColumn: getComputedStyle(document.querySelector('.avenue-inner')).display !== 'grid',
+}));
+await page.getByRole('radio', { name: /garden/i }).click();
+await page.waitForTimeout(600);
+results.gardenReplants = await page.evaluate(() => document.querySelectorAll('.garden-vine').length);
+await page.locator('#developer-pane .btn--primary').click();
+await page.waitForTimeout(700);
+
 await page.locator('#drawer-open').click();
 await page.waitForTimeout(700);
 results.drawerLinks = await page.locator('.drawer-list a').count();

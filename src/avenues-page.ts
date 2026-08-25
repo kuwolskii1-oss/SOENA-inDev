@@ -6,6 +6,7 @@
 import '@fontsource-variable/fraunces/index.css';
 import '@fontsource-variable/outfit/index.css';
 import './styles/main.css';
+import './styles/garden.css';
 
 import { emit, on } from './core/bus';
 import { loadProfile } from './core/profile';
@@ -16,6 +17,7 @@ import { initPresence } from './companion/presence';
 import { say, speakAvenue } from './companion/dialogue';
 import { beginArrival } from './ui/arrival';
 import { renderAvenues } from './ui/avenues';
+import { initGarden } from './ui/garden';
 import { initHeaderControls } from './ui/header';
 import { initChat } from './ui/chat';
 import { buildNav } from './ui/drawer';
@@ -30,6 +32,9 @@ if (quality.reducedMotion) document.documentElement.dataset.motion = 'reduced';
 const arrival = beginArrival('brief');
 
 renderAvenues();
+/* World dressing that is more than CSS — planted before the reveal
+   observer below, so the vines are revealed like any other block. */
+initGarden();
 buildNav('#community', [
   ...AVENUES.map((a) => ({ label: a.title.toLowerCase(), href: `#${a.id}`, emblem: a.emblem })),
   { label: 'reach out', href: './contact.html', icon: 'mail' as const },
