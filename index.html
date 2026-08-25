@@ -153,8 +153,9 @@
       try {
         if (localStorage.getItem('soena.theme.v1') === 'dark')
           document.documentElement.dataset.theme = 'dark';
-        var p = localStorage.getItem('soena.palette.v1');
-        if (p === 'tide') document.documentElement.dataset.palette = p;
+        // Always explicit: each palette is a world with its own CSS.
+        document.documentElement.dataset.palette =
+          localStorage.getItem('soena.palette.v1') === 'tide' ? 'tide' : 'garden';
         var f = localStorage.getItem('soena.frost.v1');
         if (f && '12345'.indexOf(f) >= 0 && f.length === 1)
           document.documentElement.dataset.frost = f;

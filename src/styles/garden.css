@@ -1,0 +1,451 @@
+/* ================================================================
+   GARDEN — the overgrown world.
+
+   Garden is not a colour scheme laid over a neutral shell: it is its
+   own place, with its own arrangement. The landing's words move out of
+   the middle into a clearing on the right, so the corner SOENA keeps
+   is left as open ground. The chips stop being a wrapped row and hang
+   off a stem like leaves. The header stops being a bar and becomes the
+   ragged edge of a canopy. Every avenue splits in two: a leaning plant
+   marker on the left, the walking on the right, with vines drawing
+   themselves down the page between them.
+
+   Everything is scoped to html[data-palette='garden'] so the next
+   world (Tide) can own the same components without a fight.
+
+   Two rules make this coexist with the shared shell:
+     • elements that also carry .reveal are tilted with the INDEPENDENT
+       `rotate` / `translate` properties, never `transform` — otherwise
+       Garden's tilt would clobber the reveal animation;
+     • any `transition` written here restates transform + opacity, since
+       the property is a whole-list replacement.
+
+   All motion is transform/opacity and stands down under
+   prefers-reduced-motion.
+   ================================================================ */
+
+html[data-palette='garden'] {
+  /* Leaf silhouettes: a tip at one corner, a swell at the other. */
+  --leaf: 74% 12% 74% 12% / 12% 74% 12% 74%;
+  --leaf-flip: 12% 74% 12% 74% / 74% 12% 74% 12%;
+  --leaf-soft: 44% 14% 44% 14% / 14% 44% 14% 44%;
+  --stem: rgba(55, 123, 66, 0.42);
+  --lean: -1.1deg;
+}
+html[data-palette='garden'][data-theme='dark'] {
+  --stem: rgba(173, 245, 188, 0.4);
+}
+
+/* ---------------------------------------------------------------
+   Growing things — the vines that thread the avenues together
+   --------------------------------------------------------------- */
+
+.garden-vine {
+  display: block;
+  width: min(26rem, 54vw);
+  height: auto;
+  margin: -7vh 0 -5vh;
+  overflow: visible;
+  color: var(--stem);
+  pointer-events: none;
+}
+.avenue--text-right + .garden-vine { margin-left: auto; margin-right: 10vw; }
+.avenue--text-left + .garden-vine { margin-left: 10vw; }
+
+/* The stem draws itself as the divider scrolls into view; the leaves
+   unfurl behind it, each a beat later than the last. */
+.garden-vine .vine-stem {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: var(--len, 600);
+  stroke-dashoffset: var(--len, 600);
+  transition: stroke-dashoffset 2.4s cubic-bezier(0.33, 0.9, 0.3, 1);
+}
+.garden-vine.is-in .vine-stem { stroke-dashoffset: 0; }
+
+/* Each leaf is positioned by its <g> and animated on the path inside,
+   so the CSS transform never fights the placement transform. */
+.garden-vine .vine-leaf {
+  fill: currentColor;
+  opacity: 0;
+  transform: scale(0.15) rotate(-20deg);
+  transform-origin: center;
+  transform-box: fill-box;
+  transition: opacity 0.7s var(--ease), transform 0.9s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+.garden-vine.is-in .vine-leaf { opacity: 0.85; transform: none; }
+.garden-vine.is-in .vine-sprig:nth-of-type(1) .vine-leaf { transition-delay: 0.3s; }
+.garden-vine.is-in .vine-sprig:nth-of-type(2) .vine-leaf { transition-delay: 0.55s; }
+.garden-vine.is-in .vine-sprig:nth-of-type(3) .vine-leaf { transition-delay: 0.8s; }
+.garden-vine.is-in .vine-sprig:nth-of-type(4) .vine-leaf { transition-delay: 1.05s; }
+.garden-vine.is-in .vine-sprig:nth-of-type(5) .vine-leaf { transition-delay: 1.3s; }
+
+/* ---------------------------------------------------------------
+   The landing: a clearing, not a centred column
+   --------------------------------------------------------------- */
+
+/* The words move off the middle and settle into the right-hand half:
+   the bottom-left quarter is SOENA's, and Garden gives it room. */
+html[data-palette='garden'] #boot-hero {
+  justify-content: flex-end;
+  padding: 0 7vw 12vh 6vw;
+}
+html[data-palette='garden'] .hero-left {
+  position: relative;
+  max-width: 30rem;
+  margin-inline: 0;
+  padding: 3rem 2.6rem 3.2rem 3rem;
+  transform: rotate(0.4deg);
+}
+/* A clearing, not a card: light pools where the canopy opens, and
+   fades out long before it reaches an edge. Nothing here has a border,
+   because nothing in a garden does. */
+html[data-palette='garden'] .hero-left::before {
+  content: '';
+  position: absolute;
+  inset: -4rem -5rem -5rem -6rem;
+  z-index: -1;
+  /* closest-side, so the pool always reaches zero INSIDE the box —
+     a larger extent gets clipped and leaves a hard vertical seam. */
+  background: radial-gradient(
+    closest-side at 46% 46%,
+    rgba(var(--wash-bg-rgb), 0.72),
+    rgba(var(--wash-bg-rgb), 0.34) 56%,
+    rgba(var(--wash-bg-rgb), 0) 100%
+  );
+}
+html[data-palette='garden'][data-theme='dark'] .hero-left::before {
+  background: radial-gradient(
+    closest-side at 46% 46%,
+    rgba(var(--wash-ink-rgb), 0.6),
+    rgba(var(--wash-ink-rgb), 0.28) 56%,
+    rgba(var(--wash-ink-rgb), 0) 100%
+  );
+}
+html[data-palette='garden'] #hero-line {
+  font-family: var(--serif);
+  font-weight: 440;
+  letter-spacing: -0.004em;
+}
+
+/* Chips stop being a wrapped row: they hang off a stem, each one a
+   little further out than the last, and bloom open when reached for. */
+html[data-palette='garden'] #hero-chips {
+  position: relative;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  padding-left: 1.1rem;
+}
+html[data-palette='garden'] #hero-chips::before {
+  content: '';
+  position: absolute;
+  left: 0.2rem;
+  top: 0.6rem;
+  bottom: 0.9rem;
+  width: 1.5px;
+  border-radius: 2px;
+  background: linear-gradient(var(--stem), transparent);
+}
+html[data-palette='garden'] #hero-chips .btn--chip {
+  border-radius: var(--leaf);
+  padding: 0.55rem 1.25rem 0.55rem 1.15rem;
+  transform: rotate(var(--lean));
+  transition: transform 0.45s var(--ease), background 0.4s, border-color 0.4s, box-shadow 0.5s;
+}
+html[data-palette='garden'] #hero-chips .btn--chip:nth-child(2) { margin-left: 0.9rem; }
+html[data-palette='garden'] #hero-chips .btn--chip:nth-child(3) { margin-left: 1.8rem; }
+html[data-palette='garden'] #hero-chips .btn--chip:nth-child(4) { margin-left: 2.7rem; }
+html[data-palette='garden'] #hero-chips .btn--chip:nth-child(even) {
+  border-radius: var(--leaf-flip);
+  --lean: 1.2deg;
+}
+html[data-palette='garden'] #hero-chips .btn--chip:hover,
+html[data-palette='garden'] #hero-chips .btn--chip:focus-visible {
+  transform: rotate(0deg) translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 22px rgba(var(--wash-ink-rgb), 0.1), 0 0 0 6px var(--accent-soft);
+}
+
+/* ---------------------------------------------------------------
+   Header: the edge of a canopy, not a bar
+   --------------------------------------------------------------- */
+
+html[data-palette='garden'] #site-head {
+  padding: 1.1rem 1.6rem 1.3rem;
+}
+/* A scalloped canopy edge where the bar would have ended. Explicit
+   pixel radii — a percentage colour-stop resolves against the whole
+   gradient ray, which at this height would flood the strip. */
+html[data-palette='garden'] #site-head::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 8px;
+  color: var(--stem);
+  opacity: 0.45;
+  background: radial-gradient(circle at 7px 0, currentColor 6.5px, transparent 7px) 0 0 / 14px 8px repeat-x;
+}
+html[data-palette='garden'] #site-head .brand {
+  font-family: var(--serif);
+  letter-spacing: 0.3em;
+  color: var(--ink);
+}
+/* Where there is a brand, the ways gather beside it instead of
+   floating in the middle — the path starts at the gate. */
+html[data-palette='garden'] .brand + #ways { margin-inline: 0 auto; }
+
+html[data-palette='garden'] #ways a,
+html[data-palette='garden'] .nav-drawer-btn {
+  position: relative;
+  border-bottom: 0;
+}
+html[data-palette='garden'] #ways a { letter-spacing: 0.12em; padding-bottom: 0.5rem; }
+html[data-palette='garden'] #ways a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.05rem;
+  height: 7px;
+  background: radial-gradient(circle 2.6px at 4px 4.4px, currentColor 96%, transparent 100%) 0 0 / 15px 7px repeat-x,
+    radial-gradient(circle 2.1px at 4px 2.2px, currentColor 96%, transparent 100%) 7.5px 0 / 15px 7px repeat-x;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.4s, transform 0.5s var(--ease);
+}
+html[data-palette='garden'] #ways a:hover::after,
+html[data-palette='garden'] #ways a:focus-visible::after,
+html[data-palette='garden'] #ways a.is-active::after {
+  opacity: 0.75;
+  transform: none;
+}
+html[data-palette='garden'] .head-actions button { border-radius: var(--leaf-soft); }
+html[data-palette='garden'] .head-actions button.theme-toggle { border-radius: 50% 50% 50% 12%; }
+
+/* ---------------------------------------------------------------
+   Avenues: a bed with a marker staked in it
+   --------------------------------------------------------------- */
+
+/* Garden splits every avenue in two. The title, number and emblem
+   become a plant marker leaning in the left column; the reading and
+   the doors run down the right. */
+html[data-palette='garden'] .avenue-inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
+  column-gap: clamp(1.6rem, 3.2vw, 3.2rem);
+  align-items: start;
+  max-width: 50rem;
+}
+html[data-palette='garden'] .avenue-head {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  position: sticky;
+  top: 24vh;
+  rotate: -2.4deg;
+}
+html[data-palette='garden'] .avenue-intro { grid-column: 2; grid-row: 1; }
+html[data-palette='garden'] .avenue-framing { grid-column: 2; grid-row: 2; }
+html[data-palette='garden'] .doors { grid-column: 2; grid-row: 3; }
+html[data-palette='garden'] .voices { grid-column: 1 / -1; grid-row: 4; }
+
+/* Each avenue leans a little differently, so the eight of them read as
+   a wandering path rather than a stack. */
+html[data-palette='garden'] .avenue:nth-of-type(odd) .avenue-inner { transform: translateX(2vw); }
+html[data-palette='garden'] .avenue:nth-of-type(even) .avenue-inner { transform: translateX(-1.2vw); }
+
+/* The marker itself: emblem above the number, title beneath. */
+html[data-palette='garden'] .avenue-index {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  letter-spacing: 0.34em;
+}
+html[data-palette='garden'] .avenue-emblem { width: 2.7rem; height: 2.7rem; }
+html[data-palette='garden'] .avenue-title {
+  font-size: clamp(1.8rem, 3.4vw, 2.7rem);
+  line-height: 1.05;
+  letter-spacing: -0.012em;
+  text-indent: -0.06em;
+  margin: 0.5rem 0 0.3rem;
+}
+html[data-palette='garden'] .avenue-tagline {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.92rem;
+  margin-bottom: 0;
+}
+/* A sprig under the marker instead of a rule. Drawn as a mask so the
+   shape stays crisp at any size and still takes --stem for its colour. */
+html[data-palette='garden'] .avenue-head::after {
+  content: '';
+  display: block;
+  width: 7.5rem;
+  height: 1.1rem;
+  margin-top: 0.85rem;
+  background: var(--stem);
+  --sprig: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 16'%3E%3Cpath d='M2 8h92' stroke='%23000' stroke-width='1.5' stroke-linecap='round' fill='none'/%3E%3Cpath d='M16 8c3-6 11-6 15 0-4 6-12 6-15 0z' fill='%23000'/%3E%3Cpath d='M40 8c3 6 11 6 15 0-4-6-12-6-15 0z' fill='%23000'/%3E%3Cpath d='M64 8c3-6 11-6 15 0-4 6-12 6-15 0z' fill='%23000'/%3E%3Cpath d='M88 8c2-4 8-4 11 0-3 4-9 4-11 0z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask: var(--sprig) no-repeat left center / contain;
+          mask: var(--sprig) no-repeat left center / contain;
+}
+/* The framing quote is held by a stem that fades out, not a rule. */
+html[data-palette='garden'] .avenue-framing {
+  padding-left: 1.1rem;
+  border-left: 2px solid var(--accent-soft);
+  border-image: linear-gradient(var(--accent), transparent) 1;
+}
+
+/* Doors are leaves: cut, tilted, stepping down the bed rather than
+   stacking, and they straighten as you reach for them. */
+html[data-palette='garden'] .doors { gap: 1.15rem; }
+html[data-palette='garden'] .door {
+  border-radius: var(--leaf);
+  padding: 1.5rem 1.6rem 1.5rem 1.9rem;
+  rotate: -0.8deg;
+  transition: transform 0.9s var(--ease), opacity 0.9s var(--ease),
+    rotate 0.5s var(--ease), translate 0.5s var(--ease),
+    border-color 0.5s, box-shadow 0.6s, background 0.5s;
+}
+html[data-palette='garden'] .door:nth-child(2) { margin-left: 1.4rem; }
+html[data-palette='garden'] .door:nth-child(3) { margin-left: 2.6rem; }
+html[data-palette='garden'] .door:nth-child(even) {
+  border-radius: var(--leaf-flip);
+  rotate: 0.9deg;
+}
+html[data-palette='garden'] .door:hover,
+html[data-palette='garden'] .door:focus-within {
+  rotate: 0deg;
+  translate: 0 -3px;
+  border-color: var(--accent);
+  box-shadow: 0 10px 30px rgba(var(--wash-ink-rgb), 0.09), 0 0 0 7px var(--accent-soft);
+}
+
+/* Buttons inside the beds bloom open. */
+html[data-palette='garden'] .door .btn,
+html[data-palette='garden'] .reach .btn,
+html[data-palette='garden'] .threshold-actions .btn {
+  border-radius: var(--leaf-soft);
+  transition: transform 0.4s var(--ease), background 0.35s, border-color 0.35s, box-shadow 0.5s;
+}
+html[data-palette='garden'] .door .btn:hover,
+html[data-palette='garden'] .reach .btn:hover,
+html[data-palette='garden'] .threshold-actions .btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 0 0 6px var(--accent-soft);
+}
+
+/* Panels, journal entries and the voices keep the leaf language. */
+html[data-palette='garden'] .journal-entry,
+html[data-palette='garden'] .voice,
+html[data-palette='garden'] .orient-card,
+html[data-palette='garden'] .palette-option,
+html[data-palette='garden'] .frost-step {
+  border-radius: var(--leaf-soft);
+}
+html[data-palette='garden'] .threshold-panel,
+html[data-palette='garden'] .chat {
+  border-radius: 1.6rem 0.5rem 1.6rem 0.5rem;
+}
+html[data-palette='garden'] .drawer { border-radius: 2rem 0 0 2rem; }
+html[data-palette='garden'] .drawer-list a {
+  border-radius: var(--leaf-soft);
+  transition: transform 0.35s var(--ease), background 0.35s;
+}
+html[data-palette='garden'] .drawer-list a:hover { transform: translateX(4px); }
+
+/* The coda: the path simply stops being tended. */
+html[data-palette='garden'] .coda-reach {
+  border-radius: var(--leaf);
+  padding: 0.7rem 1.4rem;
+  border: 1px solid var(--veil);
+  background: rgba(var(--wash-bg-rgb), 0.5);
+  transition: transform 0.9s var(--ease), opacity 0.9s var(--ease),
+    rotate 0.45s var(--ease), translate 0.45s var(--ease),
+    box-shadow 0.5s, border-color 0.4s;
+}
+html[data-palette='garden'] .coda-reach:hover,
+html[data-palette='garden'] .coda-reach:focus-visible {
+  rotate: -1deg;
+  translate: 0 -2px;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 7px var(--accent-soft);
+}
+
+/* ---------------------------------------------------------------
+   Reduced motion: the garden stops growing and simply is
+   --------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-palette='garden'] .garden-vine .vine-stem {
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+  html[data-palette='garden'] .garden-vine .vine-leaf {
+    opacity: 0.85;
+    transform: none;
+    transition: none;
+  }
+  html[data-palette='garden'] .hero-left,
+  html[data-palette='garden'] #hero-chips .btn--chip,
+  html[data-palette='garden'] .avenue-inner {
+    transform: none;
+  }
+  html[data-palette='garden'] .door,
+  html[data-palette='garden'] .avenue-head,
+  html[data-palette='garden'] .coda-reach {
+    rotate: none;
+    translate: none;
+    transition: none;
+  }
+}
+
+/* Forced colours: the decoration is ornament, and ornament drawn in
+   currentColor turns into solid blocks. Take it out. */
+@media (forced-colors: active) {
+  html[data-palette='garden'] #site-head::after,
+  html[data-palette='garden'] #ways a::after,
+  html[data-palette='garden'] .avenue-head::after,
+  html[data-palette='garden'] #hero-chips::before,
+  html[data-palette='garden'] .hero-left::before { display: none; }
+  .garden-vine { display: none; }
+}
+
+/* ---------------------------------------------------------------
+   Narrow screens: the bed is one column again
+   --------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  html[data-palette='garden'] .avenue-inner {
+    display: block;
+    max-width: 34rem;
+    transform: none;
+  }
+  html[data-palette='garden'] .avenue-head { position: static; rotate: none; }
+  html[data-palette='garden'] .avenue-title { font-size: clamp(2.2rem, 6vw, 3.4rem); }
+  html[data-palette='garden'] .avenue-index { flex-direction: row; align-items: center; gap: 0.6rem; }
+  html[data-palette='garden'] .avenue-emblem { width: 1.9rem; height: 1.9rem; }
+  html[data-palette='garden'] .door:nth-child(2),
+  html[data-palette='garden'] .door:nth-child(3) { margin-left: 0; }
+}
+
+@media (max-width: 720px) {
+  html[data-palette='garden'] #boot-hero { justify-content: flex-start; padding-left: 6vw; }
+  html[data-palette='garden'] .hero-left {
+    transform: none;
+    max-width: none;
+    padding: 2.4rem 1.6rem;
+    margin-inline: auto;
+  }
+  html[data-palette='garden'] #hero-chips .btn--chip:nth-child(2),
+  html[data-palette='garden'] #hero-chips .btn--chip:nth-child(3),
+  html[data-palette='garden'] #hero-chips .btn--chip:nth-child(4) { margin-left: 0; }
+  .garden-vine { width: min(18rem, 70vw); margin-inline: auto; }
+  .avenue--text-right + .garden-vine,
+  .avenue--text-left + .garden-vine { margin-left: auto; margin-right: auto; }
+}

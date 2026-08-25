@@ -10,6 +10,8 @@
  * This module only names them, persists the choice, and offers swatches
  * for the Developer options picker — it never writes colour itself.
  */
+import { emit } from '../core/bus';
+
 export interface Palette {
   id: string;
   label: string;
@@ -66,15 +68,22 @@ export function currentPalette(): string {
   return document.documentElement.dataset.palette || 'garden';
 }
 
+/** Each palette is a WORLD: its own tokens, components and layout, all
+ *  scoped by html[data-palette='…']. The attribute is therefore always
+ *  present (garden included) so world stylesheets have something to
+ *  hang on; only the storage key omits the default. */
+
 /** Apply a palette immediately and remember it for the next visit. */
 export function applyPalette(id: string): void {
   const known = PALETTES.some((p) => p.id === id) ? id : 'garden';
   const html = document.documentElement;
   // Reuse the theme flip's transition so every surface moves together.
   holdThemeShift();
-  if (known === 'garden') delete html.dataset.palette;
-  else html.dataset.palette = known;
+  html.dataset.palette = known;
   syncThemeColor();
+  // Worlds are mostly CSS, but a few of them grow things (Garden's
+  // vines) that need planting or pulling up when the world changes.
+  emit('palette:change', { id: known });
   try {
     if (known === 'garden') localStorage.removeItem(KEY);
     else localStorage.setItem(KEY, known);

@@ -19,6 +19,8 @@ export type AppEvents = {
   'profile:change': Record<string, never>;
   /** Pointer moved, normalized -1..1. */
   'pointer:move': { x: number; y: number };
+  /** The visitor changed worlds (palette). Carries the new world's id. */
+  'palette:change': { id: string };
 };
 
 type Handler<T> = (payload: T) => void;
