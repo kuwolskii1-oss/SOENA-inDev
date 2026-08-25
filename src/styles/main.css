@@ -1453,3 +1453,268 @@ html.theme-shift svg {
   transition-duration: 0.55s;
   transition-timing-function: linear;
 }
+
+/* ---------------------------------------------------------------
+   Find your path — the support paths, the pathway engine, the
+   journeys and the toolkit. Everything token-driven, so each world
+   (Garden today, Tide next) reshapes it without a fight.
+   --------------------------------------------------------------- */
+
+#paths { position: relative; z-index: 1; padding: 3rem 6vw 4rem; }
+.path-stage { max-width: 46rem; margin-inline: auto; }
+
+.path-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+.path-card {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  padding: 1.25rem 1.3rem 1.35rem;
+  border: 1px solid var(--veil);
+  border-radius: 1.1rem;
+  background: var(--frost);
+  cursor: pointer;
+  transition: border-color 0.4s, box-shadow 0.5s, transform 0.4s var(--ease);
+}
+.path-card:hover, .path-card:focus-visible {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(var(--wash-ink-rgb), 0.08);
+}
+.path-card-glyph { color: var(--accent); display: inline-flex; }
+.path-card-glyph .icon { width: 1.6rem; height: 1.6rem; }
+.path-card-n {
+  position: absolute; top: 1rem; right: 1.1rem;
+  font-size: 0.72rem; letter-spacing: 0.3em; color: var(--ink-faint);
+}
+.path-card-title { font-family: var(--serif); font-weight: 500; font-size: 1.08rem; line-height: 1.3; }
+.path-card-who { font-size: 0.85rem; color: var(--ink-dim); line-height: 1.5; }
+
+/* One path — the three layers */
+.path-back { margin-bottom: 1.4rem; }
+.path-head { display: grid; gap: 0.4rem; margin-bottom: 1.6rem; }
+.path-head h2 { font-family: var(--serif); font-weight: 460; font-size: clamp(1.7rem, 4vw, 2.5rem); margin: 0; line-height: 1.12; }
+.path-head-glyph { color: var(--accent); }
+.path-head-glyph .icon { width: 1.9rem; height: 1.9rem; }
+.path-who { margin: 0; color: var(--ink-dim); line-height: 1.6; max-width: 46ch; }
+
+.path-note {
+  display: block;
+  margin: 0 0 1.6rem;
+  padding: 0.85rem 1.1rem;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 0.7rem 0.7rem 0;
+  background: var(--accent-soft);
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+.path-note .icon { width: 0.9rem; height: 0.9rem; color: var(--accent); vertical-align: -0.12em; }
+
+.path-layer { margin: 0 0 1.8rem; }
+.path-layer h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.12rem;
+  margin: 0 0 0.7rem;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.path-layer h3 .icon { color: var(--accent); width: 1.05rem; height: 1.05rem; }
+.feel-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.feel-list li {
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--veil);
+  border-radius: 0.8rem;
+  background: rgba(var(--wash-bg-rgb), 0.4);
+  color: var(--ink-dim);
+  font-family: var(--serif);
+  font-style: italic;
+  line-height: 1.5;
+}
+.step-list { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.75rem; }
+.step-list li { color: var(--ink-dim); line-height: 1.7; padding-left: 0.3rem; }
+.step-list li::marker { color: var(--accent); font-weight: 600; }
+
+.path-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.8rem; }
+
+/* The guided pathway engine */
+.pathway-progress {
+  display: flex; align-items: center; gap: 0.45rem;
+  margin: 0.4rem 0 2rem;
+}
+.pathway-dot {
+  width: 0.55rem; height: 0.55rem; border-radius: 50%;
+  background: var(--veil-strong);
+  transition: background 0.4s, transform 0.4s var(--ease);
+}
+.pathway-dot.is-done { background: var(--accent); }
+.pathway-dot.is-now { background: var(--accent); transform: scale(1.45); }
+.pathway-step-label { margin-left: 0.5rem; font-size: 0.75rem; letter-spacing: 0.18em; color: var(--ink-faint); text-transform: lowercase; }
+
+.pathway-q {
+  font-family: var(--serif);
+  font-weight: 460;
+  font-size: clamp(1.4rem, 3.4vw, 2rem);
+  line-height: 1.25;
+  margin: 0 0 1.4rem;
+  max-width: 30ch;
+}
+.pathway-hint { margin: -0.8rem 0 1rem; color: var(--ink-faint); font-size: 0.88rem; }
+.pathway-answers { display: grid; gap: 0.65rem; max-width: 34rem; }
+.answer-btn {
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  padding: 0.85rem 1.15rem;
+  border: 1px solid var(--veil);
+  border-radius: 0.9rem;
+  background: var(--frost);
+  cursor: pointer;
+  line-height: 1.45;
+  transition: border-color 0.35s, background 0.35s, box-shadow 0.45s;
+}
+.answer-btn:hover, .answer-btn:focus-visible { border-color: var(--accent); }
+.answer-btn.is-picked {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.pathway-continue { margin-top: 1.4rem; }
+
+/* The safety card — deliberately the loudest thing on the page. */
+.safety-card {
+  border: 1.5px solid var(--accent);
+  border-radius: 1.1rem;
+  background: rgba(var(--wash-bg-rgb), 0.72);
+  padding: 1.5rem 1.6rem;
+  margin: 0.5rem 0 1.6rem;
+  box-shadow: 0 10px 34px rgba(var(--wash-ink-rgb), 0.1);
+}
+[data-theme='dark'] .safety-card { background: rgba(var(--wash-ink-rgb), 0.55); }
+.safety-card h2, .safety-card h3 {
+  font-family: var(--serif); font-weight: 520;
+  display: flex; align-items: center; gap: 0.55rem;
+  margin: 0 0 0.8rem; font-size: 1.3rem;
+}
+.safety-card h3 { font-size: 1.08rem; }
+.safety-card h2 .icon, .safety-card h3 .icon { color: var(--accent); }
+.safety-card p { margin: 0 0 0.8rem; line-height: 1.7; color: var(--ink); }
+.safety-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
+.safety-card li { line-height: 1.65; color: var(--ink-dim); padding-left: 1.6rem; position: relative; }
+.safety-card li .icon { position: absolute; left: 0; top: 0.22em; width: 1rem; height: 1rem; color: var(--accent); }
+
+/* "Your pathway" — the summary */
+.summary-list {
+  display: grid;
+  grid-template-columns: minmax(9rem, auto) 1fr;
+  gap: 0.55rem 1.2rem;
+  margin: 0 0 1.6rem;
+  padding: 1.2rem 1.4rem;
+  border: 1px solid var(--veil);
+  border-radius: 1.1rem;
+  background: var(--frost);
+}
+.summary-list dt { color: var(--ink-faint); font-size: 0.82rem; letter-spacing: 0.06em; padding-top: 0.15rem; }
+.summary-list dd { margin: 0; color: var(--ink); line-height: 1.5; }
+.summary-closing {
+  font-family: var(--serif); font-style: italic;
+  font-size: 1.12rem; line-height: 1.65; color: var(--ink-dim);
+  border-left: 2px solid var(--accent-soft); padding-left: 1rem;
+  margin: 0 0 1.8rem; max-width: 44ch;
+}
+
+.journey-offer {
+  border: 1px solid var(--veil);
+  border-radius: 1.2rem;
+  background: var(--frost);
+  padding: 1.5rem 1.6rem;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+}
+.journey-offer h3 { font-family: var(--serif); font-weight: 500; margin: 0; font-size: 1.2rem; }
+.journey-offer p { margin: 0; color: var(--ink-dim); line-height: 1.6; }
+.journey-offer .btn { margin-top: 0.6rem; }
+.journey-offer-glyph { color: var(--accent); }
+.journey-offer-glyph .icon { width: 1.5rem; height: 1.5rem; }
+.journey-wish { font-family: var(--serif); font-style: italic; color: var(--ink-dim); }
+
+/* The 7-day journey */
+.journey-head { margin-bottom: 1.2rem; }
+.journey-count { margin: 0.2rem 0 0; color: var(--ink-faint); font-size: 0.9rem; }
+.journey-safety { margin-bottom: 1.6rem; }
+.journey-days { display: grid; gap: 1rem; }
+.day-card {
+  border: 1px solid var(--veil);
+  border-radius: 1.1rem;
+  background: var(--frost);
+  padding: 1.2rem 1.4rem;
+  transition: border-color 0.4s, opacity 0.4s;
+}
+.day-card.is-now { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.day-card.is-locked { opacity: 0.55; }
+.day-title {
+  font-family: var(--serif); font-weight: 500; font-size: 1.1rem;
+  margin: 0; display: flex; align-items: center; gap: 0.55rem;
+}
+.day-title .icon { color: var(--accent); width: 1rem; height: 1rem; flex: none; }
+.day-n { font-size: 0.72rem; letter-spacing: 0.24em; color: var(--ink-faint); font-family: var(--sans); }
+.day-locked-note { margin: 0.4rem 0 0; color: var(--ink-faint); font-size: 0.85rem; }
+.day-body { margin-top: 0.8rem; display: grid; gap: 0.55rem; }
+.day-body h4 {
+  margin: 0.5rem 0 0; font-size: 0.82rem; letter-spacing: 0.1em;
+  text-transform: lowercase; color: var(--ink-faint);
+  display: flex; align-items: center; gap: 0.45rem;
+}
+.day-body h4 .icon { width: 0.85rem; height: 0.85rem; color: var(--accent); }
+.day-body p { margin: 0; color: var(--ink-dim); line-height: 1.65; }
+.day-intent { font-family: var(--serif); font-style: italic; }
+.day-reflect { margin-top: 0.3rem; }
+.day-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.7rem; }
+.day-card.is-done:not(.is-now):not(.is-open) .day-body--folded { display: none; }
+.journey-leave { margin-top: 2rem; }
+.btn--small { font-size: 0.8rem; padding: 0.35rem 0.8rem; }
+
+/* The Toolkit */
+#toolkit { position: relative; z-index: 1; padding: 2rem 6vw 3rem; }
+#toolkit h2 { font-family: var(--serif); font-weight: 460; font-size: clamp(1.7rem, 4vw, 2.4rem); margin: 0 0 0.5rem; max-width: 46rem; margin-inline: auto; }
+.toolkit-intro { max-width: 46rem; margin: 0 auto 1.6rem; color: var(--ink-dim); line-height: 1.65; }
+#toolkit-body { max-width: 46rem; margin-inline: auto; display: grid; gap: 1.2rem; }
+.toolkit-progress, .toolkit-block {
+  border: 1px solid var(--veil);
+  border-radius: 1.1rem;
+  background: var(--frost);
+  padding: 1.3rem 1.5rem;
+}
+.toolkit-progress h3, .toolkit-block h3 {
+  font-family: var(--serif); font-weight: 500; font-size: 1.12rem;
+  margin: 0 0 0.6rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.toolkit-progress h3 .icon, .toolkit-block h3 .icon { color: var(--accent); width: 1rem; height: 1rem; }
+.toolkit-line { margin: 0 0 0.5rem; color: var(--ink-dim); line-height: 1.65; }
+.toolkit-progress .btn { margin-top: 0.6rem; }
+
+/* The care note — quiet, permanent, honest. */
+#care-note {
+  position: relative; z-index: 1;
+  padding: 2rem 6vw 8rem;
+}
+#care-note p {
+  max-width: 46rem; margin-inline: auto;
+  color: var(--ink-faint); font-size: 0.85rem; line-height: 1.7;
+  border-top: 1px solid var(--veil);
+  padding-top: 1.4rem;
+}
+#care-note strong { color: var(--ink-dim); font-weight: 600; }
+
+@media (max-width: 720px) {
+  .summary-list { grid-template-columns: 1fr; gap: 0.15rem 0; }
+  .summary-list dd { margin-bottom: 0.6rem; }
+  #paths { padding-inline: 5vw; }
+}

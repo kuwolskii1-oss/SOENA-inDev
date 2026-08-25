@@ -32,7 +32,11 @@ const LUCIDE = [
   'user', 'compass', 'target', 'gem', 'users-round', 'route', 'message-circle',
   'feather', 'send-horizontal', 'notebook-pen', 'wind', 'lightbulb', 'mail',
   'copy', 'arrow-right', 'door-open', 'calendar', 'sparkles', 'pen-line',
-  'chevron-right', 'sun', 'moon',
+  'chevron-right', 'chevron-left', 'sun', 'moon',
+  // The support paths and their journeys.
+  'map', 'home', 'eye', 'banknote', 'moon-star', 'leaf', 'signpost',
+  'wand-sparkles', 'help-circle', 'heart-handshake', 'hand-heart',
+  'anchor', 'sprout', 'shield', 'phone', 'footprints', 'lock', 'rotate-ccw', 'heart',
 ];
 
 /** Avenue emblems — Phosphor duotone (editorial, never interactive). */

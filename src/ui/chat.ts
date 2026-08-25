@@ -8,6 +8,7 @@
 import { emit } from '../core/bus';
 import { fill, loadProfile } from '../core/profile';
 import { respond } from '../companion/mind';
+import { takeHandoff, setHandoff } from '../core/pathway';
 import { say } from '../companion/dialogue';
 import { pointAtSelector } from '../companion/presence';
 import { iconSvg, prefixIcon, type IconName } from './icons';
@@ -38,9 +39,25 @@ function saveHistory(msgs: ChatMessage[]): void {
 }
 
 let toggleImpl: (() => void) | null = null;
+let pushExternal: ((text: string) => void) | null = null;
 
 /** Open or close the conversation from anywhere (chips, SOENA herself). */
 export function toggleChat(): void {
+  toggleImpl?.();
+}
+
+/**
+ * Open the conversation with a specific SOENA line — the paths hand the
+ * chat a greeting written for the person's exact situation, so nobody
+ * has to retell their story. If the table is already open, the line
+ * simply lands in the ongoing conversation.
+ */
+export function openChatWith(text: string): void {
+  if (pushExternal) {
+    pushExternal(text);
+    return;
+  }
+  setHandoff(text);
   toggleImpl?.();
 }
 
@@ -136,7 +153,14 @@ export function initChat(): void {
       if (reply.pointAt) pointAtSelector(reply.pointAt);
     });
 
-    if (!messages.length) {
+    // Context continuity: a path or journey may have queued the exact
+    // greeting this conversation should begin with.
+    const handoff = takeHandoff();
+    if (handoff) {
+      render();
+      push({ who: 'soena', text: fill(handoff), at: Date.now() });
+      say(fill(handoff), 'guiding');
+    } else if (!messages.length) {
       const p = loadProfile();
       push({
         who: 'soena',
@@ -150,6 +174,10 @@ export function initChat(): void {
     } else {
       render();
     }
+    pushExternal = (text) => {
+      push({ who: 'soena', text, at: Date.now() });
+      say(text, 'guiding');
+    };
 
     drawer.querySelector('.chat-close')?.addEventListener('click', close);
     window.setTimeout(() => drawer?.classList.add('is-open'), 30);
@@ -157,6 +185,7 @@ export function initChat(): void {
   };
 
   const close = () => {
+    pushExternal = null;
     drawer?.classList.remove('is-open');
     window.setTimeout(() => {
       drawer?.remove();
