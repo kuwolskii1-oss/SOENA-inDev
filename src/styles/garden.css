@@ -449,3 +449,39 @@ html[data-palette='garden'] .coda-reach:focus-visible {
   .avenue--text-right + .garden-vine,
   .avenue--text-left + .garden-vine { margin-left: auto; margin-right: auto; }
 }
+
+/* ---------------------------------------------------------------
+   The paths in the Garden: the same leaf language as the beds
+   --------------------------------------------------------------- */
+
+html[data-palette='garden'] .path-card {
+  border-radius: var(--leaf);
+  rotate: -0.6deg;
+  transition: border-color 0.4s, box-shadow 0.5s,
+    rotate 0.45s var(--ease), translate 0.45s var(--ease);
+}
+html[data-palette='garden'] .path-card:nth-child(even) {
+  border-radius: var(--leaf-flip);
+  rotate: 0.7deg;
+}
+html[data-palette='garden'] .path-card:hover,
+html[data-palette='garden'] .path-card:focus-visible {
+  rotate: 0deg;
+  translate: 0 -3px;
+  box-shadow: 0 10px 30px rgba(var(--wash-ink-rgb), 0.09), 0 0 0 6px var(--accent-soft);
+}
+html[data-palette='garden'] .answer-btn { border-radius: var(--leaf-soft); }
+html[data-palette='garden'] .day-card,
+html[data-palette='garden'] .journey-offer,
+html[data-palette='garden'] .toolkit-progress,
+html[data-palette='garden'] .toolkit-block,
+html[data-palette='garden'] .summary-list { border-radius: var(--leaf-soft); }
+html[data-palette='garden'] .safety-card { border-radius: 1.4rem 0.5rem 1.4rem 0.5rem; }
+html[data-palette='garden'] .feel-list li { border-radius: var(--leaf-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-palette='garden'] .path-card { rotate: none; translate: none; transition: none; }
+}
+@media (max-width: 720px) {
+  html[data-palette='garden'] .path-card { rotate: none; }
+}

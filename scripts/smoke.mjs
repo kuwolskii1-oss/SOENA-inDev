@@ -449,11 +449,131 @@ await page.getByRole('button', { name: 'Keep these words' }).click();
 await page.waitForTimeout(700);
 results.journalEntries = await page.locator('.journal-entry').count();
 
+// Find your path — the product core: eleven paths, the three layers,
+// the guided pathway engine (safety card included), the summary, and
+// a 7-day journey with device-saved sequential progress.
+await page.goto(ORIGIN + '/paths.html', { waitUntil: 'networkidle' });
+await arrived();
+await page.waitForTimeout(900);
+results.pathsGrid = await page.locator('.path-card').count();
+await page.locator('.path-card', { hasText: 'Financially exploited' }).click();
+await page.waitForTimeout(500);
+// Validation before instruction: the feelings layer renders ABOVE the steps.
+results.pathLayers = await page.evaluate(() => {
+  const feel = document.querySelector('.feel-list');
+  const steps = document.querySelector('.step-list');
+  return {
+    feelings: feel?.children.length ?? 0,
+    steps: steps?.children.length ?? 0,
+    validationFirst: !!feel && !!steps && !!(feel.compareDocumentPosition(steps) & Node.DOCUMENT_POSITION_FOLLOWING),
+  };
+});
+// Context continuity: "Talk to SOENA about this" opens the chat with a
+// greeting written for this exact situation.
+await page.getByRole('button', { name: 'Talk to SOENA about this' }).click();
+await page.waitForTimeout(800);
+results.pathChatHandoff = await page.evaluate(() => {
+  const msgs = [...document.querySelectorAll('.chat-msg--soena')];
+  return msgs.at(-1)?.textContent?.includes('money and faith') ?? false;
+});
+await page.locator('.chat-close').click();
+await page.waitForTimeout(600);
+
+// The engine: six layers, one per screen, progress bar moving.
+await page.getByRole('button', { name: 'Begin guided pathway' }).click();
+await page.waitForTimeout(400);
+const valuenow = () => page.locator('.pathway-progress').getAttribute('aria-valuenow');
+results.pathwayStep1 = await valuenow();
+await page.getByRole('button', { name: /Still paying/ }).click();
+await page.waitForTimeout(300);
+results.pathwayStep2 = await valuenow();
+await page.getByRole('button', { name: /Warnings about what withholding/ }).click();
+await page.waitForTimeout(300);
+await page.getByRole('button', { name: 'I\u2019m scared' }).click();
+await page.waitForTimeout(300);
+// Impact is multi-select with its own Continue.
+await page.getByRole('button', { name: 'Sleep', exact: true }).click();
+await page.getByRole('button', { name: 'Money', exact: true }).click();
+results.pathwayImpactPicked = await page.locator('.answer-btn.is-picked').count();
+await page.getByRole('button', { name: 'Continue' }).click();
+await page.waitForTimeout(300);
+// Safety before progress: the unsafe answer interrupts with the card.
+await page.getByRole('button', { name: 'I don\u2019t feel safe right now' }).click();
+await page.waitForTimeout(400);
+results.safetyCard = await page.evaluate(() => {
+  const card = document.querySelector('.safety-card[role="alert"]');
+  return { present: !!card, mentionsEmergency: /emergency services/i.test(card?.textContent ?? '') };
+});
+await page.getByRole('button', { name: /safe enough to continue/ }).click();
+await page.waitForTimeout(300);
+await page.getByRole('button', { name: 'Calm the fear' }).click();
+await page.waitForTimeout(600);
+// The summary: six answers, urgent stop-the-payments guidance (the
+// "still paying" branch), the unsafe reminder, and the matched journey.
+results.pathwaySummary = await page.evaluate(() => ({
+  answers: document.querySelectorAll('.summary-list dd').length,
+  urgentCards: document.querySelectorAll('.safety-card--urgent').length,
+  stopPayments: /cancelled at the bank/i.test(document.body.textContent ?? ''),
+  stored: JSON.parse(localStorage.getItem('soena.pathway.v1') ?? '{}').goal,
+  offer: document.querySelector('.journey-offer h3')?.textContent ?? '',
+}));
+
+// The journey: begin, day 1 open, the rest locked, progress persists.
+await page.getByRole('button', { name: 'Begin the 7 days' }).click();
+await page.waitForTimeout(500);
+results.journeyStart = await page.evaluate(() => ({
+  days: document.querySelectorAll('.day-card').length,
+  locked: document.querySelectorAll('.day-card.is-locked').length,
+  now: document.querySelectorAll('.day-card.is-now').length,
+}));
+await page.locator('.day-card.is-now .day-reflect').fill('The fear was loudest at night; the long exhale helped a little.');
+await page.getByRole('button', { name: 'Mark the day done' }).click();
+await page.waitForTimeout(600);
+results.journeyAfterDay1 = await page.evaluate(() => {
+  const j = JSON.parse(localStorage.getItem('soena.journey.v1') ?? '{}');
+  return {
+    done: j.done, reflectionSaved: !!(j.reflections && j.reflections[0]),
+    locked: document.querySelectorAll('.day-card.is-locked').length,
+  };
+});
+// Persistence: a hard reload lands back in the journey, nothing lost.
+await page.goto(ORIGIN + '/paths.html#journey', { waitUntil: 'networkidle' });
+await arrived();
+await page.waitForTimeout(800);
+results.journeyPersisted = await page.evaluate(() => ({
+  inJourney: !!document.querySelector('.journey-days'),
+  doneShown: document.querySelectorAll('.day-card.is-done').length,
+}));
+// Day-2 check-in hands the chat the day's theme.
+await page.getByRole('button', { name: 'Check in with SOENA about today' }).click();
+await page.waitForTimeout(800);
+results.dayCheckIn = await page.evaluate(() => {
+  const msgs = [...document.querySelectorAll('.chat-msg--soena')];
+  return /[Dd]ay 2 of Steady/.test(msgs.at(-1)?.textContent ?? '');
+});
+await page.locator('.chat-close').click();
+await page.waitForTimeout(500);
+// The Toolkit gathers grounding, journal, and how far you have come.
+await page.goto(ORIGIN + '/paths.html#toolkit', { waitUntil: 'networkidle' });
+await arrived();
+await page.waitForTimeout(800);
+results.toolkit = await page.evaluate(() => ({
+  progressMentions: /Financially exploited/.test(document.querySelector('.toolkit-progress')?.textContent ?? '')
+    && /Steady/.test(document.querySelector('.toolkit-progress')?.textContent ?? ''),
+  breath: !!document.querySelector('#toolkit-body .breath'),
+  journal: !!document.querySelector('#toolkit-body .journal'),
+  careNote: /not a crisis service/i.test(document.querySelector('#care-note')?.textContent ?? ''),
+}));
+
 // Back to the landing: returning-visitor greeting (typed into the hero
 // line). Every hard load — refresh included — passes the full arrival.
 await page.goto(ORIGIN + '/', { waitUntil: 'networkidle' });
 await arrived();
 await page.waitForTimeout(4200);
+results.dayAwaitsCard = await page.evaluate(() => {
+  const bar = document.querySelector('.continue-bar--journey');
+  return bar ? bar.textContent?.trim() : null;
+});
 results.returningOnboardingShown = await page.locator('.threshold-panel').count();
 results.returningGreeting = await page.locator('#hero-line').textContent();
 

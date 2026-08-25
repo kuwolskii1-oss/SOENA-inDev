@@ -21,6 +21,8 @@ import { initChat, toggleChat } from './ui/chat';
 import { buildNav } from './ui/drawer';
 import { prefixIcon, type IconName } from './ui/icons';
 import { AVENUES, avenueById } from './data/avenues';
+import { loadJourney, nextDay } from './core/pathway';
+import { journeyById } from './data/journeys';
 
 const quality = detectQuality();
 document.documentElement.dataset.tier = String(quality.tier);
@@ -35,6 +37,8 @@ const arrival = beginArrival('full');
 
 /* Nav: two words — communities, and the drawer that holds the rest. */
 buildNav('./avenues.html#community', [
+  { label: 'find your path', href: './paths.html', icon: 'map' as const },
+  { label: 'toolkit', href: './paths.html#toolkit', icon: 'notebook-pen' as const },
   ...AVENUES.map((a) => ({ label: a.title.toLowerCase(), href: `./avenues.html#${a.id}`, emblem: a.emblem })),
   { label: 'reach out', href: './contact.html', icon: 'mail' as const },
 ]);
@@ -65,6 +69,9 @@ if (chips) {
     window.setTimeout(act, delay);
   };
   chips.append(
+    chip('Find my path', 'external-page-link', 'map', replyThen('Then come — eleven doors, and one of them is shaped like your situation.', () => {
+      window.location.href = './paths.html';
+    })),
     chip('Walk the avenues', 'external-page-link', 'route', replyThen('Then walk with me — the avenues are just through here.', () => {
       window.location.href = './avenues.html';
     })),
@@ -106,7 +113,9 @@ arrival.then(() => {
     touchVisit();
     window.setTimeout(() => {
       greet();
-      if (existing.lastAvenue && avenueById(existing.lastAvenue)) {
+      // A day of an active journey outranks the avenue return — the
+      // program is the promise the site made most recently.
+      if (!offerDayAwaits() && existing.lastAvenue && avenueById(existing.lastAvenue)) {
         offerContinue(existing.lastAvenue);
       }
     }, 900);
@@ -123,6 +132,40 @@ arrival.then(() => {
     }, 650);
   }
 });
+
+/** "A day awaits" — the continue card for an in-flight 7-day journey. */
+function offerDayAwaits(): boolean {
+  const j = loadJourney();
+  const journey = j ? journeyById(j.journeyId) : null;
+  if (!j || !journey) return false;
+  const day = nextDay(j);
+  if (day === null) return false;
+  const bar = document.createElement('div');
+  bar.className = 'continue-bar continue-bar--journey';
+  const label = document.createElement('span');
+  label.textContent = `Day ${day + 1} of ${journey.title} awaits — ${journey.days[day].title.toLowerCase()}.`;
+  const go = document.createElement('button');
+  go.type = 'button';
+  go.className = 'btn btn--primary';
+  go.textContent = 'Walk today';
+  const dismiss = document.createElement('button');
+  dismiss.type = 'button';
+  dismiss.className = 'btn btn--ghost';
+  dismiss.textContent = 'Later';
+  const closeBar = () => {
+    bar.classList.add('is-leaving');
+    window.setTimeout(() => bar.remove(), 400);
+  };
+  go.addEventListener('click', () => {
+    window.location.href = './paths.html#journey';
+  });
+  dismiss.addEventListener('click', closeBar);
+  bar.append(label, go, dismiss);
+  document.body.appendChild(bar);
+  window.setTimeout(() => bar.classList.add('is-visible'), 60);
+  window.setTimeout(closeBar, 16000);
+  return true;
+}
 
 function offerContinue(avenueId: string): void {
   const avenue = avenueById(avenueId);

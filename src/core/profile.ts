@@ -89,7 +89,7 @@ export function eraseAllMemory(): void {
   try {
     // Everything SOENA holds, gone in one gesture: profile, journal,
     // lore, the conversation, and the rapport it had built.
-    for (const key of ['soena.profile.v1', 'soena.journal.v1', 'soena.lore.v1', 'soena.chat.v1', 'soena.rapport.v1']) {
+    for (const key of ['soena.profile.v1', 'soena.journal.v1', 'soena.lore.v1', 'soena.chat.v1', 'soena.rapport.v1', 'soena.pathway.v1', 'soena.journey.v1']) {
       localStorage.removeItem(key);
     }
   } catch {

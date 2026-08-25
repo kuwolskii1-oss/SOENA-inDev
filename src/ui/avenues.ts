@@ -117,7 +117,7 @@ function renderDoor(avenue: Avenue, door: Door): HTMLElement {
 /* The shared breath                                                 */
 /* ---------------------------------------------------------------- */
 
-function renderBreath(): HTMLElement {
+export function renderBreath(): HTMLElement {
   const wrap = document.createElement('div');
   wrap.className = 'breath';
   const circle = document.createElement('div');
@@ -178,7 +178,7 @@ function renderBreath(): HTMLElement {
 /* Testimony journal                                                 */
 /* ---------------------------------------------------------------- */
 
-function renderJournal(avenueId: string): HTMLElement {
+export function renderJournal(avenueId: string): HTMLElement {
   const wrap = document.createElement('div');
   wrap.className = 'journal';
 
